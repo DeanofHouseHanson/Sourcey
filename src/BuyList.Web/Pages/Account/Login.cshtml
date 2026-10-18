@@ -1,0 +1,25 @@
+@page
+@model BuyList.Web.Pages.Account.LoginModel
+@{ ViewData["Title"] = "Sign in"; Layout = "_Layout"; }
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <h1 class="h3 mb-3">Sign in</h1>
+        <form method="post">
+            @if (Model.Error is not null)
+            {
+                <div class="alert alert-danger" role="alert">@Model.Error</div>
+            }
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label">Username</label>
+                <input asp-for="Username" class="form-control" autocomplete="username" autofocus />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">Password</label>
+                <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Sign in</button>
+        </form>
+    </div>
+</div>
