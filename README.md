@@ -2,7 +2,7 @@
 
 A small, self-hosted Amazon UK arbitrage sourcing tool (ASP.NET Core 8, Razor Pages, EF Core, SQLite). Import supplier prices from CSV, match them to Amazon listings by EAN, enrich with Keepa data, and see a ranked, risk-adjusted list of what to buy. Single user.
 
-> **Status:** Phase 1 of 7 (scaffold, data model, config, auth). The profit engine, import, Keepa and Buy List UI arrive in later phases.
+> **Status:** Phases 1-2 of 7 done (scaffold, auth, profit/risk/ranking logic). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
 
 ## Layout
 
