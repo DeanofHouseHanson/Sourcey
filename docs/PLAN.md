@@ -12,11 +12,11 @@ Personal use, single login, self-hosted (small VPS / EC2 / Azure App Service).
 | 2 | Profit calculator, fee estimator, risk banding, scoring, ranking + tests | **Done** | `claude/phase-2-profit-risk-ranking` |
 | 3 | CSV import with validation, EAN/brand+MPN matching | **Done** | `claude/phase-3-import-matching` |
 | 4 | **Real** `KeepaClient` (token-safe) + `FakeKeepaClient`, enrichment, opportunity calculation, seed data, CLI | **Done** (live API not yet exercised) | `claude/phase-4-keepa-enrichment-opportunities` |
-| 5 | Buy List page: filters, sorting, links, risk badges, status actions, CSV export | Next | |
-| 6 | Budget mode, blocklist page + eligibility, refresh job | | |
+| 5 | Buy List page (home), dark theme, filters, sorting, links, risk badges, status actions, CSV export, "Refresh now" | **Done** | `claude/phase-5-buy-list` |
+| 6 | Budget mode, blocklist page + eligibility, background refresh job | Next | |
 | 7 | Live-API verification on EC2 (`check-keepa`), parsing fixes from real responses, hardening | After owner runs it | |
 
-Phases are cumulative: each branch is based on the previous one. Test count after phase 4: 307, all passing.
+Phases are cumulative: each branch is based on the previous one. Test count after phase 5: 415, all passing.
 
 ## Architecture
 
@@ -165,26 +165,25 @@ In Development with `UseFake=true` and `Seed:OnStartup=true` (set in appsettings
 Schema changes (migration `KeepaEnrichment`): `Product.AsinLookupStatus`, `Product.KeepaCheckedAt`; `AmazonSnapshot.FbaSellerCountIsApprox`, `.WeightGrams`, `.KeepaFbaFee`.
 Test-suite note: web tests must set config with `builder.UseSetting(...)`, **not** `ConfigureAppConfiguration` - `Program.cs` reads configuration before the host is built, so the latter silently doesn't apply.
 
-## Phase 5 – Buy List page (home)
+## Done: Phase 5 – Buy List page and dark theme (reference)
 
-`Pages/Index` becomes the Buy List. Query-string driven (bookmarkable), server-rendered, Bootstrap, minimal JS.
+**Dark theme:** the whole app is dark (`<html data-bs-theme="dark">`, Bootstrap upgraded 5.1 -> 5.3.3 and vendored locally; jQuery and the unused validation scripts removed). Palette tokens and the table/risk-badge styles are in `wwwroot/css/site.css`.
+Risk badges run red -> green (VeryHigh `#da3633`, High orange, Medium amber, Low light green, VeryLow green) and always carry a text label.
 
-- **Columns**: image, title/brand, buy price + retailer, source link (`target="_blank" rel="noopener noreferrer"`), Amazon avg price,
-  net profit, ROI, est. monthly sales, est. monthly profit, risk badge (red->green: VeryHigh `danger`, High `warning`+orange, Medium `warning`,
-  Low `success`-light, VeryLow `success`), days to sell, competition (FBA count + Amazon-on-listing), flags (incl. "no sales data"),
-  max buy price, suggested qty, status, price last-checked, quick links: Amazon UK (`https://www.amazon.co.uk/dp/{asin}`), Keepa chart
-  (`https://keepa.com/#!product/2-{asin}`), SellerAmp (`https://sas.selleramp.com/sas/lookup?SasLookup[search_term]={asin}`), source page.
-- **Only rows with a SourceUrl** (always true by schema; keep the guard in the query).
-- **Default exclusions**: NetProfit < 0; Amazon on listing; source price older than `Ranking:StaleAfterHours`; `Ignored` status; blocklisted.
-  "Include stale" shows stale rows greyed out. "Bought" is a separate view.
-- **Filters**: min ROI, min net profit, min monthly sales, max risk (`RiskClassifier.IsWithin`), hide Amazon-on-listing, hide flagged,
-  max unit cost, retailer, include stale, status. **Ranking toggle** Risk-adjusted (default) / Raw. All columns sortable (whitelist the
-  sort keys – never concatenate user input into queries). Paging (default 50).
-- **Row actions** (POST, antiforgery): set status New/Checked/Bought/Ignored.
-- **Export**: current filtered+sorted list as CSV (`text/csv`, UTF-8 with BOM for Excel, formula-injection safe: prefix cells starting with `= + - @` with `'`).
-- Display: GBP via `en-GB` culture (`£1,234.56`); `DateTime` in UTC with relative "checked 3h ago".
-- **Tests**: a query-object/service layer (not the page model) holds filter+sort logic and is tested against in-memory SQLite: each filter,
-  default exclusions, stale handling, sort keys, ranking mode, paging, CSV export content + injection escaping.
+**Query layer** (`Application/Listing` = contracts, `Infrastructure/Listing/BuyListService`; the namespace is `Listing`, *not* `BuyList`, which would shadow the `BuyList.` root):
+`BuyListQuery` -> `IBuyListService.QueryAsync / QueryAllAsync / SetStatusAsync / GetPipelineStatusAsync`. One SQL query joins `Opportunity` + the product's **latest** `AmazonSnapshot` (anti-join).
+- **Defaults** (the "sensible" view): `MinNetProfit = 0` (clear it to see losses), `HideAmazon = true`, stale hidden (`Ranking:StaleAfterHours`, 24h), status = New + Checked (Ignored hidden; Bought has its own tab), blocklisted always hidden, ranking = risk-adjusted.
+- **Filters:** min ROI, min net profit, min monthly sales (rows with no sales data fail any minimum), max risk (`RiskClassifier.IsWithin`), hide Amazon-on-listing, hide flagged (= Gated/Hazmat/IP-prone only; no-sales-data is **not** "flagged" - it reads "no data" and the min-sales filter handles it), max unit cost (inc VAT), retailer, include stale (greyed, marked "stale"), status.
+- **Sorting:** `BuyListSort` enum whitelist (never user text in SQL); all 16 columns both ways; Risk sorts by severity (CASE), not alphabetically; ties = ROI desc, profit desc, id asc (same as `OpportunityRanker`). Default sort follows the ranking toggle (Risk-adjusted `RiskAdjusted` / Raw `EstMonthlyProfit`). Paging 25/50/100/200, out-of-range page clamps.
+- **`HiddenSummary`:** "Hidden by filters: 3 below the minimum profit · 3 with Amazon on the listing ..." - counts scoped to the *current view* (retailer etc.), only for filters that are on.
+- **`PipelineStatus`** explains an empty list instead of showing a blank page: no offers -> "Import prices"; offers but no opportunities -> where the pipeline stands (matched, awaiting Amazon lookup, ambiguous, not found, no Buy Box price) + demo/live note; opportunities exist but filtered out -> "Reset filters".
+
+**Page** (`Pages/Index`, query-string driven so every view is bookmarkable; all header/pager links keep the current filters): the 17 columns of the brief - image, title/brand/ASIN, buy price (inc, ex VAT underneath), retailer **source link** (`target=_blank rel="noopener noreferrer"`) with "checked 3h ago", Amazon 90d avg, net profit (green/red) + margin, ROI, sales/mo, est. and risk-adjusted £/mo, risk badge, days to sell, competition (FBA count, `~` when approximate; "Amazon" tag), flags, max buy, qty, status dropdown, quick links (Amazon UK, Keepa, SellerAmp, Source). Missing values read **no data**. Tabs **Buy List / Bought**.
+Row action = POST (antiforgery) `?handler=Status`; the `returnUrl` is only honoured if local; an unparseable status is a 400 (it must not silently become "New").
+**Export CSV** (`?handler=Export`, same filters/order, all pages, UTF-8 BOM, formula-injection-safe text cells, negative numbers stay numeric, includes source URL and Amazon/Keepa links).
+**Refresh now** (`?handler=Refresh`) runs `IRefreshPipeline` (demo: no tokens; live: confirm dialog + the `MaxTokensPerRun` cap) and reports results/token use; single-flight. (The scheduled background job is still Phase 6.)
+
+Tests: `Listing/BuyListServiceTests` (every filter and sort against real SQLite), `Listing/ListingHelpersTests` (TimeAgo, links, CSV), `Web/BuyListPageTests` + `BuyListEmptyStateTests` (end to end through the host: rendering, dark theme, link safety, "no data", filters, sort, paging, status actions, open-redirect and antiforgery checks, export, refresh, empty states). Also verified in a real browser (Chromium): sort, filter, status change, Bought tab, CSV download.
 
 ## Phase 6 – Budget mode, blocklist/eligibility, refresh job
 
@@ -256,6 +255,8 @@ README deployment section (below), `systemd` unit, Caddy/nginx reverse-proxy exa
 | D19 | Token safety is layered: free balance check, reserve, per-call and per-run caps, learned real cost, 2x for code lookups | "Do not go over the limit" - Keepa permits negative balances, so the check must precede spending |
 | D20 | Ambiguous EAN (several ASINs) is never auto-picked; the options (max 10, best sales rank first) are stored and shown on **Unresolved** as "Maps to multiple ASINs" with a condensed list (5 up front, rest behind "+N more"); owner clicks "Use this one" (costs no tokens) or "None of these" | A wrong ASIN means buying the wrong product; owner decision |
 | D21 | Sales come only from Keepa `monthlySold`; null => `NoSalesData` flag + VeryHigh risk, no proxy. **Wherever any value is missing the UI says plainly "no data"** (`Gbp.NoData` / `Gbp.Format(null)`), never "-", "N/A", "unknown" or a guess | Owner decision; spec: never guess |
+| D23 | Hide-flagged = Gated/Hazmat/IP only; missing sales data is shown as "no data" rather than as a separate flag badge | Owner wants plain "no data"; min-sales filter covers the rest |
+| D24 | "Refresh now" button added in Phase 5 (pipeline already existed) | Otherwise an empty Buy List could only be filled from the CLI |
 | D22 | `seed` always uses the fake catalogue | Seeding must never spend tokens |
 | D17 | Rows with extra values vs header are rejected | Catches unquoted-comma column shifts that would corrupt price/title silently |
 

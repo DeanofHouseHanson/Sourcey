@@ -4,7 +4,9 @@ using BuyList.Application.Keepa;
 using BuyList.Application.Opportunities;
 using BuyList.Application.Options;
 using BuyList.Infrastructure.Enrichment;
+using BuyList.Application.Listing;
 using BuyList.Infrastructure.Keepa;
+using BuyList.Infrastructure.Listing;
 using BuyList.Infrastructure.Opportunities;
 using BuyList.Infrastructure.Refresh;
 using BuyList.Infrastructure.Seeding;
@@ -47,6 +49,7 @@ public static class DependencyInjection
         services.AddScoped<IOpportunityService, OpportunityService>();
         services.AddScoped<IAsinResolutionService, AsinResolutionService>();
         services.AddScoped<IRefreshPipeline, RefreshPipeline>();
+        services.AddScoped<IBuyListService, BuyListService>();
         services.AddScoped<DemoSeeder>();
         return services;
     }

@@ -42,4 +42,7 @@ Business logic goes in Application as plain classes with constructor-injected `I
 - Every new behaviour needs xUnit tests with worked, hand-checked numbers (show the arithmetic in a comment, as in `ProfitCalculatorTests`).
 - Work one phase at a time, on a branch `claude/phase-N-<slug>`, tests green, commit with a clear message, then update `docs/PLAN.md`. Ask the owner before major decisions not covered by the plan.
 - Web tests: set config with `builder.UseSetting(...)`, not `ConfigureAppConfiguration` (Program.cs reads config before the host is built).
+- **UI is dark-only** (`data-bs-theme="dark"`; palette in `wwwroot/css/site.css`). Don't add light-only Bootstrap classes (`bg-white`, `table-light`, `navbar-light`, `text-dark`). Sort/filter/URL logic stays in `Application/Listing` + `Infrastructure/Listing`; pages stay thin.
+- Don't name a namespace `BuyList.*.BuyList` (it shadows the root `BuyList.` namespace); the Buy List code lives in `Listing`.
+- In Razor, write `Text<span>@Expr</span>` not `Text@Expr` (Razor treats `word@word` as an email address).
 - Razor Pages are behind a global `AuthorizeFolder("/")`; new public endpoints must be a deliberate exception.
