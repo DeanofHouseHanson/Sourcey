@@ -1,0 +1,762 @@
+[
+ {
+  "asin": "B0FAKE0001",
+  "title": "Norvik Stainless Steel Insulated Bottle 750ml",
+  "brand": "Norvik",
+  "imageUrl": null,
+  "mpn": "NV-IB750",
+  "eans": [
+   "5000000010004"
+  ],
+  "avg90BuyBox": 33.99,
+  "salesRankCurrent": 382,
+  "salesRankAvg90": 434,
+  "salesRankDrops30": 360,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 450,
+  "weightGrams": 120,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0002",
+  "title": "Norvik Stainless Steel Insulated Bottle 500ml",
+  "brand": "Norvik",
+  "imageUrl": null,
+  "mpn": "NV-IB500",
+  "eans": [
+   "5000000010370"
+  ],
+  "avg90BuyBox": 24.99,
+  "salesRankCurrent": 728,
+  "salesRankAvg90": 803,
+  "salesRankDrops30": 176,
+  "fbaSellerCount": 3,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 220,
+  "weightGrams": 300,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0003",
+  "title": "Brightleaf Bamboo Cutting Board Set 3 Piece",
+  "brand": "Brightleaf",
+  "imageUrl": null,
+  "mpn": "BL-CB3",
+  "eans": [
+   "5000000010745"
+  ],
+  "avg90BuyBox": 23.99,
+  "salesRankCurrent": 1113,
+  "salesRankAvg90": 1214,
+  "salesRankDrops30": 112,
+  "fbaSellerCount": 0,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 140,
+  "weightGrams": 450,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0004",
+  "title": "Brightleaf Silicone Baking Mat Twin Pack",
+  "brand": "Brightleaf",
+  "imageUrl": null,
+  "mpn": "BL-BM2",
+  "eans": [
+   "5000000011117"
+  ],
+  "avg90BuyBox": 14.99,
+  "salesRankCurrent": 1901,
+  "salesRankAvg90": 2055,
+  "salesRankDrops30": 64,
+  "fbaSellerCount": 5,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 80,
+  "weightGrams": 700,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0005",
+  "title": "Kestrel LED Rechargeable Torch 1000 Lumen",
+  "brand": "Kestrel",
+  "imageUrl": null,
+  "mpn": "KS-T1000",
+  "eans": [
+   "5000000011483"
+  ],
+  "avg90BuyBox": 24.99,
+  "salesRankCurrent": 3310,
+  "salesRankAvg90": 3558,
+  "salesRankDrops30": 36,
+  "fbaSellerCount": 8,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": true,
+  "monthlySold": 45,
+  "weightGrams": 1500,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0006",
+  "title": "Kestrel Cordless Handheld Vacuum Cleaner",
+  "brand": "Kestrel",
+  "imageUrl": null,
+  "mpn": "KS-HV20",
+  "eans": [
+   "5000000011858"
+  ],
+  "avg90BuyBox": 43.99,
+  "salesRankCurrent": 5819,
+  "salesRankAvg90": 6233,
+  "salesRankDrops30": 20,
+  "fbaSellerCount": 2,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 25,
+  "weightGrams": 250,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0007",
+  "title": "Kestrel Digital Kitchen Scale 5kg",
+  "brand": "Kestrel",
+  "imageUrl": null,
+  "mpn": "KS-DS5",
+  "eans": [
+   "5000000012220"
+  ],
+  "avg90BuyBox": 11.99,
+  "salesRankCurrent": 11588,
+  "salesRankAvg90": 12387,
+  "salesRankDrops30": 9,
+  "fbaSellerCount": 12,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 12,
+  "weightGrams": 90,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0008",
+  "title": "Pawsome Interactive Cat Feather Wand Toy",
+  "brand": "Pawsome",
+  "imageUrl": null,
+  "mpn": "PW-CF01",
+  "eans": [
+   "5000000012596"
+  ],
+  "avg90BuyBox": 10.99,
+  "salesRankCurrent": 21478,
+  "salesRankAvg90": 22937,
+  "salesRankDrops30": 4,
+  "fbaSellerCount": 4,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 6,
+  "weightGrams": 380,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0009",
+  "title": "Pawsome Dog Lick Mat with Suction Cups",
+  "brand": "Pawsome",
+  "imageUrl": null,
+  "mpn": "PW-LM03",
+  "eans": [
+   "5000000012961"
+  ],
+  "avg90BuyBox": 11.99,
+  "salesRankCurrent": null,
+  "salesRankAvg90": null,
+  "salesRankDrops30": null,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": null,
+  "weightGrams": 520,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0010",
+  "title": "Pawsome Collapsible Pet Travel Bowl Pair",
+  "brand": "Pawsome",
+  "imageUrl": null,
+  "mpn": "PW-TB02",
+  "eans": [
+   "5000000013333"
+  ],
+  "avg90BuyBox": 11.99,
+  "salesRankCurrent": 517,
+  "salesRankAvg90": 578,
+  "salesRankDrops30": 256,
+  "fbaSellerCount": 6,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 320,
+  "weightGrams": 800,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0011",
+  "title": "Tiny Trails Wooden Stacking Rings Toddler Toy",
+  "brand": "Tiny Trails",
+  "imageUrl": null,
+  "mpn": "TT-SR12",
+  "eans": [
+   "5000000013708"
+  ],
+  "avg90BuyBox": 22.99,
+  "salesRankCurrent": 981,
+  "salesRankAvg90": 1073,
+  "salesRankDrops30": 128,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 160,
+  "weightGrams": 120,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0012",
+  "title": "Tiny Trails Magnetic Building Tiles 60 Piece",
+  "brand": "Tiny Trails",
+  "imageUrl": null,
+  "mpn": "TT-MT60",
+  "eans": [
+   "5000000014071"
+  ],
+  "avg90BuyBox": 46.99,
+  "salesRankCurrent": 1612,
+  "salesRankAvg90": 1746,
+  "salesRankDrops30": 76,
+  "fbaSellerCount": 3,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 95,
+  "weightGrams": 300,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0013",
+  "title": "Tiny Trails Kids Water Bottle Dinosaur 400ml",
+  "brand": "Tiny Trails",
+  "imageUrl": null,
+  "mpn": "TT-WB04",
+  "eans": [
+   "5000000014446"
+  ],
+  "avg90BuyBox": 14.99,
+  "salesRankCurrent": 4216,
+  "salesRankAvg90": 4524,
+  "salesRankDrops30": 28,
+  "fbaSellerCount": 0,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 35,
+  "weightGrams": 450,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0014",
+  "title": "Solace Aromatherapy Diffuser 300ml",
+  "brand": "Solace",
+  "imageUrl": null,
+  "mpn": "SO-AD300",
+  "eans": [
+   "5000000014811"
+  ],
+  "avg90BuyBox": null,
+  "salesRankCurrent": 9425,
+  "salesRankAvg90": 10080,
+  "salesRankDrops30": 12,
+  "fbaSellerCount": 5,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": true,
+  "monthlySold": 15,
+  "weightGrams": 700,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0015",
+  "title": "Solace Lavender Essential Oil 30ml",
+  "brand": "Solace",
+  "imageUrl": null,
+  "mpn": "SO-EO30L",
+  "eans": [
+   "5000000015184"
+  ],
+  "avg90BuyBox": 11.99,
+  "salesRankCurrent": 30050,
+  "salesRankAvg90": 32080,
+  "salesRankDrops30": 3,
+  "fbaSellerCount": 8,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 4,
+  "weightGrams": 1500,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0016",
+  "title": "Solace Memory Foam Travel Pillow",
+  "brand": "Solace",
+  "imageUrl": null,
+  "mpn": "SO-TP01",
+  "eans": [
+   "5000000015559"
+  ],
+  "avg90BuyBox": 16.99,
+  "salesRankCurrent": 299,
+  "salesRankAvg90": 346,
+  "salesRankDrops30": 480,
+  "fbaSellerCount": 2,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 600,
+  "weightGrams": 250,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0017",
+  "title": "Halden Cast Iron Skillet 26cm",
+  "brand": "Halden",
+  "imageUrl": null,
+  "mpn": "HD-CI26",
+  "eans": [
+   "5000000015924"
+  ],
+  "avg90BuyBox": 23.99,
+  "salesRankCurrent": 796,
+  "salesRankAvg90": 876,
+  "salesRankDrops30": 160,
+  "fbaSellerCount": 12,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 200,
+  "weightGrams": 90,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0018",
+  "title": "Halden Ceramic Non-Stick Frying Pan 28cm",
+  "brand": "Halden",
+  "imageUrl": null,
+  "mpn": "HD-FP28",
+  "eans": [
+   "5000000016297"
+  ],
+  "avg90BuyBox": 37.99,
+  "salesRankCurrent": 1401,
+  "salesRankAvg90": 1521,
+  "salesRankDrops30": 88,
+  "fbaSellerCount": 4,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 110,
+  "weightGrams": 380,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0019",
+  "title": "Halden Glass Food Storage Containers 10 Piece",
+  "brand": "Halden",
+  "imageUrl": null,
+  "mpn": "HD-FS10",
+  "eans": [
+   "5000000016662"
+  ],
+  "avg90BuyBox": 34.99,
+  "salesRankCurrent": 2728,
+  "salesRankAvg90": 2937,
+  "salesRankDrops30": 44,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 55,
+  "weightGrams": 520,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0020",
+  "title": "Halden Stainless Steel Cocktail Shaker Set",
+  "brand": "Halden",
+  "imageUrl": null,
+  "mpn": "HD-CS07",
+  "eans": [
+   "5000000017034"
+  ],
+  "avg90BuyBox": 25.99,
+  "salesRankCurrent": 5222,
+  "salesRankAvg90": 5597,
+  "salesRankDrops30": 22,
+  "fbaSellerCount": 6,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 28,
+  "weightGrams": 800,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0021",
+  "title": "Quillon A5 Dotted Notebook Hardback",
+  "brand": "Quillon",
+  "imageUrl": null,
+  "mpn": "QU-NB5D",
+  "eans": [
+   "5000000017409"
+  ],
+  "avg90BuyBox": 13.99,
+  "salesRankCurrent": 382,
+  "salesRankAvg90": 434,
+  "salesRankDrops30": 360,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 450,
+  "weightGrams": 120,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0022",
+  "title": "Quillon Gel Pens Assorted 24 Pack",
+  "brand": "Quillon",
+  "imageUrl": null,
+  "mpn": "QU-GP24",
+  "eans": [
+   "5000000017775"
+  ],
+  "avg90BuyBox": 14.99,
+  "salesRankCurrent": 728,
+  "salesRankAvg90": 803,
+  "salesRankDrops30": 176,
+  "fbaSellerCount": 7,
+  "fbaSellerCountIsApprox": true,
+  "amazonOnListing": false,
+  "monthlySold": 220,
+  "weightGrams": 300,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0023",
+  "title": "Quillon Desk Organiser Mesh 5 Compartment",
+  "brand": "Quillon",
+  "imageUrl": null,
+  "mpn": "QU-DO05",
+  "eans": [
+   "5000000018147"
+  ],
+  "avg90BuyBox": 19.99,
+  "salesRankCurrent": 1113,
+  "salesRankAvg90": 1214,
+  "salesRankDrops30": 112,
+  "fbaSellerCount": 0,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": true,
+  "monthlySold": 140,
+  "weightGrams": 450,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0024",
+  "title": "Aerowave Bluetooth Sports Earbuds",
+  "brand": "Aerowave",
+  "imageUrl": null,
+  "mpn": "AW-BE22",
+  "eans": [
+   "5000000018512"
+  ],
+  "avg90BuyBox": 29.99,
+  "salesRankCurrent": 1901,
+  "salesRankAvg90": 2055,
+  "salesRankDrops30": 64,
+  "fbaSellerCount": 5,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 80,
+  "weightGrams": 700,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0025",
+  "title": "Aerowave USB-C Fast Charger 30W",
+  "brand": "Aerowave",
+  "imageUrl": null,
+  "mpn": "AW-FC30",
+  "eans": [
+   "5000000018888"
+  ],
+  "avg90BuyBox": 17.99,
+  "salesRankCurrent": 3310,
+  "salesRankAvg90": 3558,
+  "salesRankDrops30": 36,
+  "fbaSellerCount": 8,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 45,
+  "weightGrams": 1500,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0026",
+  "title": "Aerowave Braided USB-C Cable 2m 3 Pack",
+  "brand": "Aerowave",
+  "imageUrl": null,
+  "mpn": "AW-CB23",
+  "eans": [
+   "5000000019250"
+  ],
+  "avg90BuyBox": 11.99,
+  "salesRankCurrent": 5819,
+  "salesRankAvg90": 6233,
+  "salesRankDrops30": 20,
+  "fbaSellerCount": 2,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 25,
+  "weightGrams": 250,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0027",
+  "title": "Aerowave Phone Stand Adjustable Aluminium",
+  "brand": "Aerowave",
+  "imageUrl": null,
+  "mpn": "AW-PS01",
+  "eans": [
+   "5000000019625"
+  ],
+  "avg90BuyBox": 10.99,
+  "salesRankCurrent": 11588,
+  "salesRankAvg90": 12387,
+  "salesRankDrops30": 9,
+  "fbaSellerCount": 12,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 12,
+  "weightGrams": 90,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0028",
+  "title": "Fernhill Resistance Bands Set of 5",
+  "brand": "Fernhill",
+  "imageUrl": null,
+  "mpn": "FH-RB05",
+  "eans": [
+   "5000000019991"
+  ],
+  "avg90BuyBox": 21.99,
+  "salesRankCurrent": 21478,
+  "salesRankAvg90": 22937,
+  "salesRankDrops30": 4,
+  "fbaSellerCount": 4,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 6,
+  "weightGrams": 380,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0029",
+  "title": "Fernhill Non-Slip Yoga Mat 6mm",
+  "brand": "Fernhill",
+  "imageUrl": null,
+  "mpn": "FH-YM06",
+  "eans": [
+   "5000000020362"
+  ],
+  "avg90BuyBox": 24.99,
+  "salesRankCurrent": null,
+  "salesRankAvg90": null,
+  "salesRankDrops30": null,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": null,
+  "weightGrams": 520,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0030",
+  "title": "Fernhill Foam Roller 33cm",
+  "brand": "Fernhill",
+  "imageUrl": null,
+  "mpn": "FH-FR33",
+  "eans": [
+   "5000000020737"
+  ],
+  "avg90BuyBox": 23.99,
+  "salesRankCurrent": 517,
+  "salesRankAvg90": 578,
+  "salesRankDrops30": 256,
+  "fbaSellerCount": 6,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 320,
+  "weightGrams": 800,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0031",
+  "title": "Fernhill Adjustable Dumbbell Pair 10kg",
+  "brand": "Fernhill",
+  "imageUrl": null,
+  "mpn": "FH-DB10",
+  "eans": [
+   "5000000021109"
+  ],
+  "avg90BuyBox": 84.99,
+  "salesRankCurrent": 981,
+  "salesRankAvg90": 1073,
+  "salesRankDrops30": 128,
+  "fbaSellerCount": 1,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 160,
+  "weightGrams": 120,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0032",
+  "title": "Marlow Microfibre Cleaning Cloths 12 Pack",
+  "brand": "Marlow",
+  "imageUrl": null,
+  "mpn": "MR-MC12",
+  "eans": [
+   "5000000021475"
+  ],
+  "avg90BuyBox": 14.99,
+  "salesRankCurrent": 1612,
+  "salesRankAvg90": 1746,
+  "salesRankDrops30": 76,
+  "fbaSellerCount": 3,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": true,
+  "monthlySold": 95,
+  "weightGrams": 300,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0033",
+  "title": "Marlow Under Sink Storage Organiser",
+  "brand": "Marlow",
+  "imageUrl": null,
+  "mpn": "MR-US02",
+  "eans": [
+   "5000000021840"
+  ],
+  "avg90BuyBox": 25.99,
+  "salesRankCurrent": 4216,
+  "salesRankAvg90": 4524,
+  "salesRankDrops30": 28,
+  "fbaSellerCount": 0,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 35,
+  "weightGrams": 450,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0034",
+  "title": "Marlow Hanging Wardrobe Organiser 6 Shelf",
+  "brand": "Marlow",
+  "imageUrl": null,
+  "mpn": "MR-WO06",
+  "eans": [
+   "5000000022212"
+  ],
+  "avg90BuyBox": 17.99,
+  "salesRankCurrent": 9425,
+  "salesRankAvg90": 10080,
+  "salesRankDrops30": 12,
+  "fbaSellerCount": 5,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 15,
+  "weightGrams": 700,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0035",
+  "title": "Marlow Foldable Laundry Basket 50L",
+  "brand": "Marlow",
+  "imageUrl": null,
+  "mpn": "MR-LB50",
+  "eans": [
+   "5000000022588"
+  ],
+  "avg90BuyBox": 14.99,
+  "salesRankCurrent": 30050,
+  "salesRankAvg90": 32080,
+  "salesRankDrops30": 3,
+  "fbaSellerCount": 8,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 4,
+  "weightGrams": 1500,
+  "fbaPickAndPackFee": 3.1
+ },
+ {
+  "asin": "B0FAKE0036",
+  "title": "Cobalt Fox Plant Pots with Saucers 6 Pack",
+  "brand": "Cobalt Fox",
+  "imageUrl": null,
+  "mpn": "CF-PP06",
+  "eans": [
+   "5000000022953"
+  ],
+  "avg90BuyBox": 20.99,
+  "salesRankCurrent": 299,
+  "salesRankAvg90": 346,
+  "salesRankDrops30": 480,
+  "fbaSellerCount": 2,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 600,
+  "weightGrams": 250,
+  "fbaPickAndPackFee": null
+ },
+ {
+  "asin": "B0FAKE0037",
+  "title": "Cobalt Fox Hand Trowel and Fork Garden Set",
+  "brand": "Cobalt Fox",
+  "imageUrl": null,
+  "mpn": "CF-GS02",
+  "eans": [
+   "5000000023325"
+  ],
+  "avg90BuyBox": 13.99,
+  "salesRankCurrent": 796,
+  "salesRankAvg90": 876,
+  "salesRankDrops30": 160,
+  "fbaSellerCount": 12,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 200,
+  "weightGrams": 90,
+  "fbaPickAndPackFee": 2.4
+ },
+ {
+  "asin": "B0FAKE0038",
+  "title": "Cobalt Fox Solar Garden Lights 8 Pack",
+  "brand": "Cobalt Fox",
+  "imageUrl": null,
+  "mpn": "CF-SL08",
+  "eans": [
+   "5000000023691"
+  ],
+  "avg90BuyBox": 38.99,
+  "salesRankCurrent": 1401,
+  "salesRankAvg90": 1521,
+  "salesRankDrops30": 88,
+  "fbaSellerCount": 4,
+  "fbaSellerCountIsApprox": false,
+  "amazonOnListing": false,
+  "monthlySold": 110,
+  "weightGrams": 380,
+  "fbaPickAndPackFee": null
+ }
+]

@@ -22,4 +22,21 @@ public class KeepaOptions
     public int MinTokensReserve { get; set; } = 20;
 
     public int BatchSize { get; set; } = 20;
+
+    /// <summary>
+    /// Planning cost per product: 1 base token + 2 for the buy box data we need. Real usage reported by Keepa
+    /// (tokensConsumed) is tracked too and the larger figure wins, so the estimate can only get more cautious.
+    /// </summary>
+    public int TokensPerProduct { get; set; } = 3;
+
+    /// <summary>Hard ceiling on tokens spent by one refresh run, whatever the balance is.</summary>
+    public int MaxTokensPerRun { get; set; } = 100;
+
+    /// <summary>An EAN that Keepa couldn't resolve is retried only after this many days.</summary>
+    public int UnresolvedRetryDays { get; set; } = 7;
+
+    public int RequestTimeoutSeconds { get; set; } = 60;
+
+    /// <summary>Base delay before retrying a transient (5xx / network) failure; doubles each retry, max 2 retries.</summary>
+    public int RetryBaseDelayMs { get; set; } = 500;
 }

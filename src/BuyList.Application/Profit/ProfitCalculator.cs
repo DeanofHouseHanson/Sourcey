@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace BuyList.Application.Profit;
 
-public sealed record ProfitInput(decimal SellPriceIncVat, decimal BuyPriceExVat, decimal BuyPriceIncVat, int? WeightGrams = null);
+public sealed record ProfitInput(decimal SellPriceIncVat, decimal BuyPriceExVat, decimal BuyPriceIncVat, int? WeightGrams = null, decimal? KnownFbaFee = null);
 
 /// <summary>Per-unit result. Percentages are in percent (52.94 = 52.94%). Money is rounded to pence.</summary>
 public sealed record ProfitResult(
@@ -50,7 +50,7 @@ public class ProfitCalculator
 
     public ProfitResult Calculate(ProfitInput input)
     {
-        var c = Compute(input.SellPriceIncVat, input.WeightGrams);
+        var c = Compute(input.SellPriceIncVat, input.WeightGrams, input.KnownFbaFee);
         var cogs = _o.VatRegistered ? input.BuyPriceExVat : input.BuyPriceIncVat;
 
         var profit = c.Revenue - cogs - c.Fees - c.Inbound - c.Returns;
@@ -82,10 +82,10 @@ public class ProfitCalculator
         return (Floor(ex), Floor(inc));
     }
 
-    private Costs Compute(decimal sellIncVat, int? weightGrams)
+    private Costs Compute(decimal sellIncVat, int? weightGrams, decimal? knownFbaFee)
     {
         var vat = 1m + _o.VatRate;
-        var fee = _fees.Estimate(new FeeRequest(sellIncVat, weightGrams));
+        var fee = _fees.Estimate(new FeeRequest(sellIncVat, weightGrams, knownFbaFee));
 
         var revenue = _o.VatRegistered ? sellIncVat / vat : sellIncVat;
         var outputVat = _o.VatRegistered ? sellIncVat - revenue : 0m;

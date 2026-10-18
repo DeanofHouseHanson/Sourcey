@@ -21,6 +21,10 @@ public class ApproximateFeeEstimator : IFeeEstimator
     public FeeEstimate Estimate(FeeRequest request)
     {
         var referral = request.SellPriceIncVat * _profit.ReferralFeePercent / 100m;
+        if (request.KnownFbaFee is > 0)
+            return new FeeEstimate(referral, request.KnownFbaFee.Value,
+                $"approx: {_profit.ReferralFeePercent}% referral, FBA fee reported by Keepa");
+
         var weight = request.WeightGrams ?? _fba.DefaultWeightGrams;
 
         var tiers = _fba.Tiers.OrderBy(t => t.MaxWeightGrams).ToList();

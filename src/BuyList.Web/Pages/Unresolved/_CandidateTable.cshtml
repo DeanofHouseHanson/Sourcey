@@ -1,0 +1,29 @@
+@using BuyList.Application.Formatting
+@model (int ProductId, List<BuyList.Domain.Entities.AsinCandidate> Options)
+<div class="table-responsive">
+    <table class="table table-sm table-borderless align-middle mb-0 small">
+        <thead class="text-muted">
+            <tr><th>ASIN</th><th>Listing</th><th class="text-end">Rank</th><th class="text-end">Sold/mo</th><th class="text-end">90d Buy Box</th><th>Amazon</th><th></th></tr>
+        </thead>
+        <tbody>
+        @foreach (var c in Model.Options)
+        {
+            <tr>
+                <td><a href="https://www.amazon.co.uk/dp/@c.Asin" target="_blank" rel="noopener noreferrer">@c.Asin</a></td>
+                <td class="text-truncate" style="max-width: 28rem" title="@c.Title">@c.Brand @c.Title</td>
+                <td class="text-end">@(c.SalesRank is null ? Gbp.NoData : "#" + c.SalesRank.Value.ToString("N0"))</td>
+                <td class="text-end">@(c.MonthlySales?.ToString("N0") ?? Gbp.NoData)</td>
+                <td class="text-end">@Gbp.Format(c.Avg90BuyBox)</td>
+                <td>@(c.AmazonOnListing ? "on listing" : "no")</td>
+                <td class="text-end">
+                    <form method="post" asp-page-handler="Choose">
+                        <input type="hidden" name="productId" value="@Model.ProductId" />
+                        <input type="hidden" name="asin" value="@c.Asin" />
+                        <button class="btn btn-sm btn-outline-primary py-0" type="submit">Use this one</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

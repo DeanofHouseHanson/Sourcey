@@ -1,0 +1,101 @@
+@page
+@using BuyList.Application.Formatting
+@model BuyList.Web.Pages.Import.IndexModel
+@{ ViewData["Title"] = "Import offers"; }
+
+<h1 class="h3">Import offers</h1>
+<p class="text-muted">
+    Upload a CSV of supplier prices. Every row must have a valid <code>https://</code> link to the seller page.
+    You'll see a preview, including any rejected rows and why, before anything is saved.
+</p>
+
+@if (Model.Error is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.Error</div>
+}
+
+@if (Model.Result is null)
+{
+    <form method="post" asp-page-handler="Preview" enctype="multipart/form-data" class="row g-2 align-items-end mb-4">
+        <div class="col-md-6">
+            <label asp-for="Upload" class="form-label">CSV file (max 5 MB)</label>
+            <input asp-for="Upload" type="file" accept=".csv,text/csv" class="form-control" required />
+        </div>
+        <div class="col-auto"><button class="btn btn-primary">Preview</button></div>
+    </form>
+    <p class="small">
+        Columns: <code>retailer, url, ean, mpn, brand, title, price, vat_included, stock</code>
+        (required: retailer, url, price, vat_included).
+        Download <a asp-page-handler="Sample">a sample file</a> or
+        <a asp-page-handler="Sample" asp-route-name="invalid">a sample with deliberate errors</a>.
+    </p>
+}
+
+@if (Model.Preview is { FatalError: null } p && Model.Result is null)
+{
+    <h2 class="h5">Preview of @Model.FileName</h2>
+    <p>
+        <span class="badge text-bg-success">@p.Valid.Count valid</span>
+        <span class="badge @(p.Rejected.Count > 0 ? "text-bg-danger" : "text-bg-secondary")">@p.Rejected.Count rejected</span>
+        @if (p.Unmatchable > 0)
+        {
+            <span class="badge text-bg-warning" title="No EAN and no brand + MPN: these import but can never be matched to an Amazon listing">@p.Unmatchable valid but unmatchable</span>
+        }
+    </p>
+
+    @if (p.Rejected.Count > 0)
+    {
+        <h3 class="h6 text-danger">Rejected rows (not imported)</h3>
+        <partial name="_RejectedTable" model="p.Rejected" />
+    }
+
+    @if (p.Valid.Count > 0)
+    {
+        <h3 class="h6">Valid rows @(p.Valid.Count > 50 ? "(first 50 shown)" : "")</h3>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>Row</th><th>Retailer</th><th>Title</th><th>EAN</th><th>Ex VAT</th><th>Inc VAT</th><th>Stock</th><th>Link</th></tr></thead>
+                <tbody>
+                @foreach (var v in p.Valid.Take(50))
+                {
+                    <tr>
+                        <td>@v.RowNumber</td><td>@v.Retailer</td><td>@v.Title</td>
+                        <td>@(v.Ean ?? "–")@if (!v.Matchable) { <span class="badge text-bg-warning ms-1">unmatchable</span> }</td>
+                        <td>@Gbp.Format(v.BuyPriceExVat)</td><td>@Gbp.Format(v.BuyPriceIncVat)</td><td>@v.Stock</td>
+                        <td><a href="@v.SourceUrl" target="_blank" rel="noopener noreferrer">open</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <form method="post" asp-page-handler="Import">
+            <input type="hidden" name="token" value="@Model.Token" />
+            <button class="btn btn-success">Import @p.Valid.Count valid row@(p.Valid.Count == 1 ? "" : "s")</button>
+            <a asp-page="/Import/Index" class="btn btn-link">Cancel</a>
+        </form>
+    }
+}
+
+@if (Model.Result is { } r)
+{
+    <div class="alert alert-success" role="status">
+        Import complete: <strong>@r.Added</strong> added, <strong>@r.Updated</strong> updated (price/details changed),
+        <strong>@r.Refreshed</strong> re-checked unchanged, <strong>@r.Rejected</strong> rejected.
+    </div>
+    <h2 class="h5">Matching</h2>
+    <ul>
+        <li>Matched by EAN to an existing product: <strong>@r.Matching.MatchedByEan</strong></li>
+        <li>Matched by brand + MPN: <strong>@r.Matching.MatchedByBrandMpn</strong></li>
+        <li>New products created from an EAN (awaiting Amazon lookup): <strong>@r.Matching.ProductsCreated</strong></li>
+        <li>Skipped, ambiguous brand + MPN: <strong>@r.Matching.AmbiguousSkipped</strong></li>
+        <li>No product found for brand + MPN: <strong>@r.Matching.NoProductFound</strong></li>
+        <li>Unmatchable (no EAN, no brand + MPN): <strong>@r.Matching.Unmatchable</strong></li>
+    </ul>
+    @if (Model.RejectedAfterImport.Count > 0)
+    {
+        <h2 class="h5 text-danger">Rejected rows</h2>
+        <p><a asp-page-handler="Rejected" asp-route-token="@Model.Token">Download rejected rows as CSV</a></p>
+        <partial name="_RejectedTable" model="Model.RejectedAfterImport" />
+    }
+    <a asp-page="/Import/Index" class="btn btn-outline-primary">Import another file</a>
+}
