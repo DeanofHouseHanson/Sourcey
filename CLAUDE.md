@@ -27,6 +27,7 @@ Business logic goes in Application as plain classes with constructor-injected `I
 - **No scraping of Amazon.** Amazon data comes from Keepa only.
 - `SourceOffer.SourceUrl` is mandatory (absolute https). Nothing is silently dropped on import; rejected rows are shown with reasons.
 - Match on EAN/GTIN, else brand + MPN. **Never on title alone.**
+- **Missing values are displayed as plain "no data"** (`Gbp.NoData`), never "-", "N/A", "unknown" or a substitute figure.
 - Missing monthly-sales data => VeryHigh risk + `NoSalesData` flag; never guess a value.
 - Money is `decimal`; times are UTC (`DateTime.UtcNow`); UI shows GBP (`en-GB`).
 - **Keepa tokens are real money/limits.** Never loop calls, never raise `MaxTokensPerRun`/batch sizes without asking, and use `check-keepa` (max 3 ASINs) for live checks. `seed` must stay offline.

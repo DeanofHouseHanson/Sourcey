@@ -45,6 +45,7 @@ public static class DependencyInjection
 
         services.AddScoped<IEnrichmentService, EnrichmentService>();
         services.AddScoped<IOpportunityService, OpportunityService>();
+        services.AddScoped<IAsinResolutionService, AsinResolutionService>();
         services.AddScoped<IRefreshPipeline, RefreshPipeline>();
         services.AddScoped<DemoSeeder>();
         return services;

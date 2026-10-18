@@ -92,9 +92,9 @@ public static class CliCommands
             Console.WriteLine();
             Console.WriteLine($"{p.Asin}  {p.Title}");
             Console.WriteLine($"  brand={p.Brand}  mpn={p.Mpn}  eans={string.Join(",", p.Eans)}");
-            Console.WriteLine($"  90d avg Buy Box: {Gbp.Format(p.Avg90BuyBox)}   sales rank: {p.SalesRankCurrent?.ToString() ?? "–"} (90d avg {p.SalesRankAvg90?.ToString() ?? "–"})");
-            Console.WriteLine($"  monthly sold: {p.MonthlySold?.ToString() ?? "no data"}   FBA sellers: {p.FbaSellerCount?.ToString() ?? "unknown"}{(p.FbaSellerCountIsApprox ? " (approx: all new offers)" : "")}   Amazon on listing: {p.AmazonOnListing}");
-            Console.WriteLine($"  weight: {p.WeightGrams?.ToString() ?? "–"} g   FBA fee (Keepa): {Gbp.Format(p.FbaPickAndPackFee)}");
+            Console.WriteLine($"  90d avg Buy Box: {Gbp.Format(p.Avg90BuyBox)}   sales rank: {p.SalesRankCurrent?.ToString() ?? Gbp.NoData} (90d avg {p.SalesRankAvg90?.ToString() ?? Gbp.NoData})");
+            Console.WriteLine($"  monthly sold: {p.MonthlySold?.ToString() ?? Gbp.NoData}   FBA sellers: {p.FbaSellerCount?.ToString() ?? Gbp.NoData}{(p.FbaSellerCountIsApprox ? " (approx: all new offers)" : "")}   Amazon on listing: {p.AmazonOnListing}");
+            Console.WriteLine($"  weight: {(p.WeightGrams is null ? Gbp.NoData : p.WeightGrams + " g")}   FBA fee (Keepa): {Gbp.Format(p.FbaPickAndPackFee)}");
         }
         var missing = asins.Except(res.Products.Select(p => p.Asin)).Except(res.NotFetched).ToList();
         if (missing.Count > 0) Console.WriteLine($"\nKeepa returned nothing for: {string.Join(", ", missing)}");

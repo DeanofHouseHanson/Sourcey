@@ -21,6 +21,8 @@ namespace BuyList.Infrastructure.Enrichment;
 /// </summary>
 public class EnrichmentService : IEnrichmentService
 {
+    private const int MaxCandidates = 10;
+
     private readonly BuyListDbContext _db;
     private readonly IKeepaClient _keepa;
     private readonly KeepaOptions _o;
@@ -66,13 +68,22 @@ public class EnrichmentService : IEnrichmentService
                 looked++;
                 var matches = res.Products.Where(k => k.Eans.Contains(stub.Ean!)).DistinctBy(k => k.Asin).ToList();
                 stub.KeepaCheckedAt = now;
+                if (matches.Count != 1 && stub.AsinLookupStatus != AsinLookupStatus.Ambiguous) { /* nothing stale to clear */ }
+                else if (matches.Count <= 1)   // a retry has settled it: the old option list no longer applies
+                    _db.AsinCandidates.RemoveRange(await _db.AsinCandidates.Where(c => c.ProductId == stub.Id).ToListAsync(ct));
 
                 if (matches.Count == 0) { stub.AsinLookupStatus = AsinLookupStatus.NotFound; notFound++; }
-                else if (matches.Count > 1) { stub.AsinLookupStatus = AsinLookupStatus.Ambiguous; ambiguous++; }
+                else if (matches.Count > 1)
+                {
+                    stub.AsinLookupStatus = AsinLookupStatus.Ambiguous;
+                    await StoreCandidatesAsync(stub, matches, ct);   // so the owner can choose without spending more tokens
+                    ambiguous++;
+                }
                 else
                 {
-                    var target = await ResolveAsync(stub, matches[0], ct);
-                    snapshots += AddSnapshot(target, matches[0]);
+                    var target = await ProductAssignment.ResolveAsync(_db, stub, matches[0], ct);
+                    ProductAssignment.AddSnapshot(_db, target, matches[0]);
+                    snapshots++;
                     resolved++;
                 }
             }
@@ -102,8 +113,9 @@ public class EnrichmentService : IEnrichmentService
                     if (notSent.Contains(product.Asin!)) { deferred++; continue; }
                     product.KeepaCheckedAt = now;   // asked, so don't ask again until it's stale (even if Keepa had nothing)
                     if (!byAsin.TryGetValue(product.Asin!, out var k)) continue;
-                    ApplyProductData(product, k);
-                    snapshots += AddSnapshot(product, k);
+                    ProductAssignment.ApplyProductData(product, k);
+                    ProductAssignment.AddSnapshot(_db, product, k);
+                    snapshots++;
                     refreshed++;
                 }
                 await _db.SaveChangesAsync(ct);
@@ -115,54 +127,11 @@ public class EnrichmentService : IEnrichmentService
         return new EnrichmentSummary(looked, resolved, notFound, ambiguous, refreshed, snapshots, used, tokensLeft, deferred, throttled);
     }
 
-    /// <summary>
-    /// Attach the ASIN to the stub. If a product with that ASIN already exists (e.g. it was matched earlier by brand + MPN),
-    /// fold the stub into it instead, since ASIN is unique.
-    /// </summary>
-    private async Task<Product> ResolveAsync(Product stub, KeepaProduct k, CancellationToken ct)
+    /// <summary>Keep the best options (best-ranked first, unranked last) in place of any older candidate list.</summary>
+    private async Task StoreCandidatesAsync(Domain.Entities.Product stub, List<Application.Keepa.KeepaProduct> matches, CancellationToken ct)
     {
-        var existing = await _db.Products.FirstOrDefaultAsync(p => p.Asin == k.Asin && p.Id != stub.Id, ct);
-        if (existing is null)
-        {
-            stub.Asin = k.Asin;
-            stub.AsinLookupStatus = AsinLookupStatus.Resolved;
-            ApplyProductData(stub, k);
-            return stub;
-        }
-
-        foreach (var offer in await _db.SourceOffers.Where(o => o.ProductId == stub.Id).ToListAsync(ct))
-            offer.ProductId = existing.Id;
-        existing.Ean ??= stub.Ean;
-        existing.KeepaCheckedAt = stub.KeepaCheckedAt;
-        _db.Products.Remove(stub);
-        ApplyProductData(existing, k);
-        return existing;
-    }
-
-    private static void ApplyProductData(Product p, KeepaProduct k)
-    {
-        p.Title = k.Title ?? p.Title;          // Amazon's title is the authoritative one
-        p.Brand ??= k.Brand;
-        p.Mpn ??= k.Mpn;
-        p.ImageUrl = k.ImageUrl ?? p.ImageUrl;
-        if (p.Ean is null && k.Eans.Count == 1) p.Ean = k.Eans[0];
-    }
-
-    private int AddSnapshot(Product p, KeepaProduct k)
-    {
-        _db.AmazonSnapshots.Add(new AmazonSnapshot
-        {
-            Product = p,
-            CapturedAt = k.FetchedAt,
-            Avg90BuyBox = k.Avg90BuyBox,
-            SalesRank = k.SalesRankCurrent,
-            MonthlySales = k.MonthlySold,
-            FbaSellerCount = k.FbaSellerCount ?? 0,
-            FbaSellerCountIsApprox = k.FbaSellerCountIsApprox || k.FbaSellerCount is null,
-            AmazonOnListing = k.AmazonOnListing,
-            WeightGrams = k.WeightGrams,
-            KeepaFbaFee = k.FbaPickAndPackFee
-        });
-        return 1;
+        _db.AsinCandidates.RemoveRange(await _db.AsinCandidates.Where(c => c.ProductId == stub.Id).ToListAsync(ct));
+        foreach (var k in matches.OrderBy(k => k.SalesRankCurrent ?? int.MaxValue).ThenBy(k => k.Asin, StringComparer.Ordinal).Take(MaxCandidates))
+            _db.AsinCandidates.Add(ProductAssignment.ToCandidate(stub.Id, k));
     }
 }

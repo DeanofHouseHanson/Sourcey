@@ -27,4 +27,7 @@ public class Product
 
     public List<SourceOffer> SourceOffers { get; set; } = new();
     public List<AmazonSnapshot> Snapshots { get; set; } = new();
+
+    /// <summary>Populated while AsinLookupStatus is Ambiguous.</summary>
+    public List<AsinCandidate> AsinCandidates { get; set; } = new();
 }

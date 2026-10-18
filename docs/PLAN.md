@@ -16,7 +16,7 @@ Personal use, single login, self-hosted (small VPS / EC2 / Azure App Service).
 | 6 | Budget mode, blocklist page + eligibility, refresh job | | |
 | 7 | Live-API verification on EC2 (`check-keepa`), parsing fixes from real responses, hardening | After owner runs it | |
 
-Phases are cumulative: each branch is based on the previous one. Test count after phase 4: 289, all passing.
+Phases are cumulative: each branch is based on the previous one. Test count after phase 4: 307, all passing.
 
 ## Architecture
 
@@ -137,8 +137,7 @@ ASIN/code inputs are regex-validated (no query injection), and tests assert the 
 Image is built from `imagesCSV` (filename allow-list). *The fixtures in tests are hand-written from Keepa's published model, not recorded - see Phase 7.*
 
 **`EnrichmentService`** (`IEnrichmentService`): (1) *resolve* stub products (EAN, no ASIN) with code lookups - the response already contains the market data, so the snapshot
-is saved immediately (no second request); one ASIN -> `Resolved`; none -> `NotFound` (retry after `Keepa:UnresolvedRetryDays`=7); several -> `Ambiguous` (**never auto-picked**,
-needs the owner); an ASIN we already hold -> the stub is merged into it. (2) *refresh* products with an ASIN whose `KeepaCheckedAt` is older than `Keepa:RefreshAgeHours`
+is saved immediately (no second request); one ASIN -> `Resolved`; none -> `NotFound` (retry after `Keepa:UnresolvedRetryDays`=7); several -> `Ambiguous` (**never auto-picked**; up to 10 options are stored in `AsinCandidate` with their market data, and the owner settles it on the **Unresolved** page - see below); an ASIN we already hold -> the stub is merged into it. (2) *refresh* products with an ASIN whose `KeepaCheckedAt` is older than `Keepa:RefreshAgeHours`
 (never-fetched first, then oldest). Only products with at least one non-out-of-stock offer are worth tokens. `KeepaCheckedAt` is stamped for every request, even empty answers,
 so a product Keepa has nothing on is not re-charged each run. Budget leftovers are `ProductsDeferred`. `B0FAKE*` ASINs are never sent to the live client.
 Snapshots store `FbaSellerCount` (0 + `FbaSellerCountIsApprox` when unknown), `WeightGrams`, `KeepaFbaFee`.
@@ -147,6 +146,12 @@ Snapshots store `FbaSellerCount` (0 + `FbaSellerCountIsApprox` when unknown), `W
 (with weight + Keepa FBA fee) -> `OpportunityScorer` (buy cash = `BuyPriceIncVat`) -> upsert by `SourceOfferId`, **preserving `Status`**. `Opportunity.MaxBuyPrice` = inc-VAT value. Flags: `NoSalesData` +
 `IEligibilityChecker` (manual toggles now; blocklist in Phase 6). Rows that stop qualifying are deleted **only if still `New`** (Checked/Bought/Ignored are kept). Amazon-on-listing, negative-profit and stale
 rows still get opportunities - **the Buy List page filters them** (Phase 5).
+
+**Unresolved page** (`Pages/Unresolved`, nav "Unresolved"): for each `Ambiguous` product shows the supplier title, EAN, its offers (retailer, price, source link) and a
+**"Maps to multiple ASINs"** badge with a condensed options table (ASIN -> amazon.co.uk link, listing, rank, sold/month, 90d Buy Box, Amazon on listing; missing values read "no data";
+first 5 shown, the rest behind a "+N more options" disclosure). **Use this one** (`IAsinResolutionService.ChooseAsync`) accepts only an ASIN that was actually offered, assigns it (merging into an
+existing product with that ASIN if there is one), saves that option's stored data as the snapshot, and recalculates opportunities - **no Keepa tokens**. **None of these** marks the EAN `NotFound`. Below, a
+"Not found on Amazon" table lists `NotFound` products with their offers. A later retry that settles on one ASIN (or none) clears stale options. Migration `AsinCandidates`.
 
 **`IRefreshPipeline`** = match pending -> enrich -> recalculate, single-flight (a second concurrent run is refused so tokens are never double-spent). Phase 6's job + "Refresh now" button call this.
 
@@ -209,7 +214,7 @@ The client is built (Phase 4) but has only been tested against hand-written fixt
 3. Paste any surprise (key redacted!) back. Things most likely to need adjusting: whether `stats` is populated with `history=0` (if not, drop `history=0` in `KeepaClient`), whether `avg90[18]` is
    present for all products, the real `tokensConsumed` per product (then tune `Keepa:TokensPerProduct`), and how often `monthlySold` is null.
 4. Then `refresh` with `Keepa__UseFake=false` against a copy of the DB (or a fresh one with a small CSV) and compare opportunities to Seller Central / Keepa by hand.
-Open follow-ups: UI to pick an ASIN for `Ambiguous` EANs; consider `salesRankDrops30` as a *displayed* (not substituted) demand hint; Amazon-in-stock-percent over 90 days.
+Open follow-ups: Amazon-in-stock-percent over 90 days.
 
 ## Final polish (after phase 7)
 
@@ -249,8 +254,8 @@ README deployment section (below), `systemd` unit, Caddy/nginx reverse-proxy exa
 | D16 | Brand+MPN never creates products; ambiguous/variant matches are refused | Prevents wrong-product matches; Keepa can't look up by MPN |
 | D18 | Real Keepa client built in Phase 4, fake kept for tests/seed/offline | Owner supplies a key; earlier real data beats delayed verification |
 | D19 | Token safety is layered: free balance check, reserve, per-call and per-run caps, learned real cost, 2x for code lookups | "Do not go over the limit" - Keepa permits negative balances, so the check must precede spending |
-| D20 | Ambiguous EAN (several ASINs) is never auto-picked | A wrong ASIN means buying the wrong product |
-| D21 | Sales come only from Keepa `monthlySold`; null => NoSalesData, no proxy | Spec: never guess; many ASINs will show as no-data |
+| D20 | Ambiguous EAN (several ASINs) is never auto-picked; the options (max 10, best sales rank first) are stored and shown on **Unresolved** as "Maps to multiple ASINs" with a condensed list (5 up front, rest behind "+N more"); owner clicks "Use this one" (costs no tokens) or "None of these" | A wrong ASIN means buying the wrong product; owner decision |
+| D21 | Sales come only from Keepa `monthlySold`; null => `NoSalesData` flag + VeryHigh risk, no proxy. **Wherever any value is missing the UI says plainly "no data"** (`Gbp.NoData` / `Gbp.Format(null)`), never "-", "N/A", "unknown" or a guess | Owner decision; spec: never guess |
 | D22 | `seed` always uses the fake catalogue | Seeding must never spend tokens |
 | D17 | Rows with extra values vs header are rejected | Catches unquoted-comma column shifts that would corrupt price/title silently |
 
@@ -259,5 +264,3 @@ README deployment section (below), `systemd` unit, Caddy/nginx reverse-proxy exa
 - Confirm FBA fee tiers / referral % per category you actually sell in.
 - Are supplier CSV prices usually ex-VAT (trade) or inc-VAT (retail)? (`vat_included` handles both, but defaults in the sample file follow your answer.)
 - Preferred default branch name and whether PRs should be used per phase.
-- `monthlySold` is null for many ASINs, which will rank them last as "no sales data". Happy with that, or should a clearly-labelled proxy (e.g. sales-rank drops) be shown alongside?
-- For EANs that map to several ASINs, should the app offer a "choose the ASIN" screen (planned) or pick the best-ranked automatically?
