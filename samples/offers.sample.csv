@@ -1,0 +1,39 @@
+retailer,url,ean,mpn,brand,title,price,vat_included,stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/stainless-steel-insulated-bottle-750ml,5000000010004,NV-IB750,Norvik,Stainless Steel Insulated Bottle 750ml,9.80,false,low stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/stainless-steel-insulated-bottle-500ml,5000000010370,NV-IB500,Norvik,Stainless Steel Insulated Bottle 500ml,7.90,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/bamboo-cutting-board-set-3-piece,5000000010745,BL-CB3,Brightleaf,Bamboo Cutting Board Set 3 Piece,8.40,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/silicone-baking-mat-twin-pack,5000000011117,BL-BM2,Brightleaf,Silicone Baking Mat Twin Pack,4.60,false,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/led-rechargeable-torch-1000-lumen,5000000011483,KS-T1000,Kestrel,LED Rechargeable Torch 1000 Lumen,11.20,false,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/cordless-handheld-vacuum-cleaner,5000000011858,KS-HV20,Kestrel,Cordless Handheld Vacuum Cleaner,29.40,true,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/digital-kitchen-scale-5kg,5000000012220,KS-DS5,Kestrel,Digital Kitchen Scale 5kg,5.90,false,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/interactive-cat-feather-wand-toy,5000000012596,PW-CF01,Pawsome,Interactive Cat Feather Wand Toy,2.10,false,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/dog-lick-mat-with-suction-cups,5000000012961,PW-LM03,Pawsome,Dog Lick Mat with Suction Cups,3.20,false,out of stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/collapsible-pet-travel-bowl-pair,5000000013333,PW-TB02,Pawsome,Collapsible Pet Travel Bowl Pair,2.80,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/wooden-stacking-rings-toddler-toy,5000000013708,TT-SR12,Tiny Trails,Wooden Stacking Rings Toddler Toy,7.32,true,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/magnetic-building-tiles-60-piece,5000000014071,TT-MT60,Tiny Trails,Magnetic Building Tiles 60 Piece,17.30,false,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/kids-water-bottle-dinosaur-400ml,5000000014446,TT-WB04,Tiny Trails,Kids Water Bottle Dinosaur 400ml,5.28,true,low stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/aromatherapy-diffuser-300ml,5000000014811,SO-AD300,Solace,Aromatherapy Diffuser 300ml,13.70,false,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/lavender-essential-oil-30ml,5000000015184,SO-EO30L,Solace,Lavender Essential Oil 30ml,3.60,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/memory-foam-travel-pillow,5000000015559,SO-TP01,Solace,Memory Foam Travel Pillow,7.50,false,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/cast-iron-skillet-26cm,5000000015924,HD-CI26,Halden,Cast Iron Skillet 26cm,15.90,false,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/ceramic-non-stick-frying-pan-28cm,5000000016297,HD-FP28,Halden,Ceramic Non-Stick Frying Pan 28cm,12.60,false,low stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/glass-food-storage-containers-10-piece,5000000016662,HD-FS10,Halden,Glass Food Storage Containers 10 Piece,17.04,true,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/stainless-steel-cocktail-shaker-set,5000000017034,HD-CS07,Halden,Stainless Steel Cocktail Shaker Set,11.16,true,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/a5-dotted-notebook-hardback,5000000017409,QU-NB5D,Quillon,A5 Dotted Notebook Hardback,2.90,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/gel-pens-assorted-24-pack,5000000017775,QU-GP24,Quillon,Gel Pens Assorted 24 Pack,3.80,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/desk-organiser-mesh-5-compartment,5000000018147,QU-DO05,Quillon,Desk Organiser Mesh 5 Compartment,8.04,true,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/bluetooth-sports-earbuds,5000000018512,AW-BE22,Aerowave,Bluetooth Sports Earbuds,14.88,true,out of stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/usb-c-fast-charger-30w,5000000018888,AW-FC30,Aerowave,USB-C Fast Charger 30W,8.28,true,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/braided-usb-c-cable-2m-3-pack,5000000019250,AW-CB23,Aerowave,Braided USB-C Cable 2m 3 Pack,4.20,false,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/phone-stand-adjustable-aluminium,5000000019625,AW-PS01,Aerowave,Phone Stand Adjustable Aluminium,5.10,false,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/resistance-bands-set-of-5,5000000019991,FH-RB05,Fernhill,Resistance Bands Set of 5,7.68,true,low stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/non-slip-yoga-mat-6mm,5000000020362,FH-YM06,Fernhill,Non-Slip Yoga Mat 6mm,9.10,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/foam-roller-33cm,5000000020737,FH-FR33,Fernhill,Foam Roller 33cm,9.84,true,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/adjustable-dumbbell-pair-10kg,5000000021109,FH-DB10,Fernhill,Adjustable Dumbbell Pair 10kg,33.36,true,in stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/microfibre-cleaning-cloths-12-pack,5000000021475,MR-MC12,Marlow,Microfibre Cleaning Cloths 12 Pack,4.68,true,in stock
+Brightwell Wholesale,https://www.brightwell-wholesale.example/products/under-sink-storage-organiser,5000000021840,MR-US02,Marlow,Under Sink Storage Organiser,11.52,true,low stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/hanging-wardrobe-organiser-6-shelf,5000000022212,MR-WO06,Marlow,Hanging Wardrobe Organiser 6 Shelf,6.30,false,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/foldable-laundry-basket-50l,5000000022588,MR-LB50,Marlow,Foldable Laundry Basket 50L,6.48,true,out of stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/plant-pots-with-saucers-6-pack,5000000022953,CF-PP06,Cobalt Fox,Plant Pots with Saucers 6 Pack,12.24,true,in stock
+HomeGoods Direct,https://www.homegoods-direct.example/products/hand-trowel-and-fork-garden-set,5000000023325,CF-GS02,Cobalt Fox,Hand Trowel and Fork Garden Set,8.64,true,out of stock
+ValueTrade UK,https://www.valuetrade-uk.example/products/solar-garden-lights-8-pack,5000000023691,CF-SL08,Cobalt Fox,Solar Garden Lights 8 Pack,13.10,false,low stock

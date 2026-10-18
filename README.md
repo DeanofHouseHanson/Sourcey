@@ -2,7 +2,7 @@
 
 A small, self-hosted Amazon UK arbitrage sourcing tool (ASP.NET Core 8, Razor Pages, EF Core, SQLite). Import supplier prices from CSV, match them to Amazon listings by EAN, enrich with Keepa data, and see a ranked, risk-adjusted list of what to buy. Single user.
 
-> **Status:** Phases 1-2 of 7 done (scaffold, auth, profit/risk/ranking logic). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
+> **Status:** Phases 1-3 of 7 done (scaffold, auth, profit/risk/ranking logic, CSV import + matching). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
 
 ## Layout
 
@@ -60,6 +60,23 @@ cd src/BuyList.Web && dotnet user-secrets set "Keepa:ApiKey" "<your key>"
 export Keepa__ApiKey=<your key>
 ```
 Then set `Keepa:UseFake` to `false` (the real client arrives in Phase 7; until then the fake client is used). Amazon data comes from Keepa only; Amazon pages are never scraped.
+
+## Importing supplier prices (CSV)
+
+Open **Import**, upload a `.csv`, review the preview, then confirm. Nothing is saved until you confirm, and every rejected row is listed with the reason(s).
+Samples: `samples/offers.sample.csv` (clean) and `samples/offers.invalid.csv` (deliberate errors), also downloadable from the page.
+
+| Column | Required | Notes |
+|---|---|---|
+| `retailer` | yes | Shown on the Buy List |
+| `url` | yes | Absolute `https://` link to the seller's product page. Rows without one are rejected |
+| `price` | yes | e.g. `12.50`, `£12.50`, `1,234.50` (a decimal comma like `12,50` is rejected) |
+| `vat_included` | yes | `true`/`false` (also yes/no/1/0): whether `price` includes VAT |
+| `ean` | no | EAN-8/UPC-12/EAN-13/GTIN-14 with a valid check digit. Keep the column formatted as **text** in Excel (it eats leading zeros and turns long numbers into `5.01E+12`) |
+| `mpn`, `brand`, `title` | no | Brand + MPN is the fallback match when there's no EAN. Quote values containing commas |
+| `stock` | no | in stock / low stock / out of stock (anything else = unknown) |
+
+Re-importing a URL updates its price and "last checked" time. Offers match to products by EAN, else exact brand + MPN, never by title.
 
 ## Data notes
 

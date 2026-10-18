@@ -10,13 +10,13 @@ Personal use, single login, self-hosted (small VPS / EC2 / Azure App Service).
 |---|---|---|---|
 | 1 | Scaffold, data model, migrations, config, auth, README | **Done** | `claude/phase-1-scaffold` |
 | 2 | Profit calculator, fee estimator, risk banding, scoring, ranking + tests | **Done** | `claude/phase-2-profit-risk-ranking` |
-| 3 | CSV import with validation, EAN/brand+MPN matching | Next | |
-| 4 | `IKeepaClient` + `FakeKeepaClient`, enrichment, opportunity calculation, seed data | | |
+| 3 | CSV import with validation, EAN/brand+MPN matching | **Done** | `claude/phase-3-import-matching` |
+| 4 | `IKeepaClient` + `FakeKeepaClient`, enrichment, opportunity calculation, seed data | Next | |
 | 5 | Buy List page: filters, sorting, links, risk badges, status actions, CSV export | | |
 | 6 | Budget mode, blocklist page + eligibility, refresh job | | |
 | 7 | Real `KeepaClient` (token-aware, cached) behind `Keepa:UseFake` | | |
 
-Phases are cumulative: each branch is based on the previous one. Test count after phase 2: 84, all passing.
+Phases are cumulative: each branch is based on the previous one. Test count after phase 3: 198, all passing.
 
 ## Architecture
 
@@ -78,28 +78,37 @@ top tier). **The shipped FBA fees are placeholders** – verify against Seller C
 **Not yet wired:** nothing persists `Opportunity` rows yet; weight/size are not on `Product` (calculator takes optional `WeightGrams`;
 add package weight to the Keepa domain model and pass it through in phase 4).
 
-## Phase 3 – CSV import and matching
+## Done: Phase 3 – CSV import and matching (reference)
 
-Goal: upload CSV -> preview -> validate -> show rejected rows -> import -> match. Place pure logic in `Application/Import` and
-`Application/Matching`; page at `Pages/Import`.
+Pure logic in `Application/Import`; DB-backed services in `Infrastructure/Import`; UI at `Pages/Import` (nav link "Import").
 
-- **CSV columns** (header row, case-insensitive, any order): `retailer, url, ean, mpn, brand, title, price, vat_included, stock`.
-  Add `samples/offers.sample.csv` (also used by the seeder). Use a real CSV parser (CsvHelper) – handle quotes, commas in titles, BOM.
-- **Validation (per row, collect ALL errors)**: `url` required, absolute, scheme exactly `https`, host present; `retailer` required;
-  `price` parses as a decimal > 0 (accept `£`, thousands separators, invariant culture); `vat_included` accepts true/false/yes/no/1/0
-  (blank => error, don't assume); `stock` optional, maps to `StockStatus` (unknown text => `Unknown`, not rejection);
-  `ean` if present must be 8/12/13/14 digits with a valid GTIN check digit; reject otherwise (or reject row, and say why).
-  A row with neither valid EAN nor (brand + mpn) is *importable but unmatchable* – import and flag as "unmatched", don't drop.
-- **Price handling**: `BuyPriceExVat`/`BuyPriceIncVat` both stored, derived with `Profit:VatRate`. `CheckedAt = DateTime.UtcNow` at import.
-- **Result UI**: counts (accepted / rejected / duplicates), table of rejected rows with row number, raw values and *every* reason. Offer
-  a "download rejected rows as CSV". Nothing silently dropped. Preview step must not write to the DB.
-- **Duplicates**: `SourceUrl` is unique – a re-import of the same URL updates price/stock/`CheckedAt` (upsert) and reports "updated".
-- **Matching (`IProductMatcher`)**: 1) normalise EAN to GTIN-13 (pad UPC-12/EAN-8/GTIN-14 as appropriate) and match `Product.Ean`;
-  2) else exact case-insensitive `Brand` + normalised `Mpn`; 3) never title. Unmatched offers keep `ProductId = null`. When no
-  `Product` exists for a valid EAN yet, create a stub `Product` (Ean/Brand/Mpn/Title) to be resolved to an ASIN by the Keepa lookup
-  (phase 4) – Keepa supports product lookup by code.
-- **Tests**: validation matrix (missing url, `http://`, relative url, `javascript:`, no host, bad price, bad vat flag, bad EAN checksum,
-  multiple errors on one row), parser edge cases, upsert, GTIN normalisation, matcher precedence, title-only never matches.
+**Flow:** upload (`.csv`, max 5 MB, max 10,000 rows) -> **Preview** (parse + validate, *no DB writes*; bytes cached in `IMemoryCache` for 30 min under
+a GUID token) -> **Confirm** (the same bytes are re-validated server-side, never trusting the client) -> upsert offers -> match -> summary +
+rejected-rows table + "download rejected rows as CSV".
+
+| Piece | Responsibility |
+|---|---|
+| `OfferCsvParser` (CsvHelper) | Header case-insensitive/any order/BOM-safe; required columns `retailer,url,price,vat_included`; optional `ean,mpn,brand,title,stock`; unknown columns ignored; duplicate headers, empty file, >10k rows are fatal. Records the physical line number (header = line 1). A row with **more values than headers** is rejected (unquoted comma shifts columns). |
+| `OfferRowValidator` | Collects **every** error per row. URL: required, absolute, scheme exactly `https`, has host, no `user:pass@`, <=2048 chars; stored normalised (lower-case scheme/host, fragment removed). Price: `£` and thousands commas allowed (`1,234.50`); `12,50` is **rejected**, never read as 1250; >0 and <=£100k. `vat_included` required: true/false/yes/no/y/n/1/0. EAN (optional) must be a valid GTIN or the row is rejected. Over-long text is rejected, never truncated. Unknown `stock` text => `Unknown` (never rejects). Derives ex/inc VAT using `Profit:VatRate`. |
+| `Gtin` | Valid lengths 8/12/13/14 + GS1 check digit. **Canonical form = GTIN-13** (UPC-A is padded with a leading 0) so UPC and EAN spellings of one product match; EAN-8 and GTIN-14 keep their length. Specific errors for spreadsheet damage (scientific notation, eaten leading zero). |
+| `OfferFileValidator` | Parse + validate whole file, no side effects. Repeated URLs in one file: first kept, later ones rejected with "duplicate of row N". `RejectedToCsv` escapes formula injection (`CsvSafe`). |
+| `OfferImportService` | Upsert by normalised `SourceUrl`: **Added** / **Updated** (something changed) / **Refreshed** (unchanged, but `CheckedAt` still bumped - re-importing a price re-confirms it). Changing EAN/MPN/brand clears `ProductId` so it is re-matched. Then runs the matcher. |
+| `ProductMatcher` (`IProductMatcher.MatchPendingAsync`) | See below. Idempotent; reused by the refresh job in phase 6. |
+
+**Matching rules** (title is never used): 1) canonical EAN == `Product.Ean`; 2) else exact brand (case-insensitive) + MPN (trimmed, case-insensitive).
+Brand+MPN is **refused** if >1 product matches (ambiguous) or if the product has a *different* EAN (a variant). Brand+MPN matching a product with no EAN
+**teaches** it the offer's EAN. A valid EAN with no product creates a **stub `Product`** (EAN, brand, MPN, title; no ASIN) for the Keepa lookup in phase 4.
+Brand+MPN alone never creates a product (Keepa cannot look those up) - such offers stay unmatched ("no product found"). No EAN and no brand+MPN =>
+"unmatchable" (imported, flagged, never matched).
+
+Other additions: `samples/offers.sample.csv` (38 clean rows, fictional brands, valid GTINs - phase 4's fake Keepa data should key on these EANs),
+`samples/offers.invalid.csv` (7 deliberate errors + 1 unmatchable row), both downloadable from the Import page and copied to the build output;
+`Application/Formatting/Gbp` (ICU-independent `£1,234.56` formatter for phase 5); `TimeProvider.System` registered for testable clocks.
+
+Tests (`tests/BuyList.Tests/Import`, `Web/ImportPageTests`): GTIN matrix, full validation matrix (missing/relative/http/ftp/javascript/no-host/credentials URLs,
+price/VAT/EAN/stock forms, multi-error rows), parser edge cases, file-level accounting (valid + rejected == input rows), matcher precedence/ambiguity/
+variant/learning/idempotency, import upsert + re-match, and end-to-end page tests through the real host (login, preview writes nothing, confirm, rejected
+download, expired token, non-csv refused, links open with `rel="noopener noreferrer"`).
 
 ## Phase 4 – Keepa abstraction, fake client, enrichment, opportunities, seed data
 
@@ -206,6 +215,12 @@ README deployment section (below), `systemd` unit, Caddy/nginx reverse-proxy exa
 | D9 | Confirmed 0 sales => qty 0 | Real data says don't buy |
 | D10 | Hosted BackgroundService for refresh, not Hangfire | One user; avoids extra storage/dashboard auth surface |
 | D11 | FBA fee table values are placeholders | Real rate card must be verified by the owner |
+| D12 | Invalid EAN rejects the whole row (visible in the rejected list) | A wrong code could attach an offer to the wrong product; safer to fix the file |
+| D13 | Canonical GTIN-13 (UPC padded); EAN-8/GTIN-14 unchanged | One key for the same item across suppliers/Keepa without conflating pack levels |
+| D14 | Preview cached server-side by token, re-validated on confirm | Avoids huge hidden fields and client tampering |
+| D15 | Re-importing an unchanged price still bumps `CheckedAt` | The import is the owner re-confirming the price; drives staleness |
+| D16 | Brand+MPN never creates products; ambiguous/variant matches are refused | Prevents wrong-product matches; Keepa can't look up by MPN |
+| D17 | Rows with extra values vs header are rejected | Catches unquoted-comma column shifts that would corrupt price/title silently |
 
 ## Open questions for the owner
 

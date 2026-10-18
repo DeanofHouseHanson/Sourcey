@@ -1,0 +1,9 @@
+retailer,url,ean,mpn,brand,title,price,vat_included,stock
+Brightwell Wholesale,,5000000090013,XX-1,Norvik,Missing URL,5.00,false,in stock
+ValueTrade UK,http://valuetrade-uk.example/products/insecure,5000000090020,XX-2,Norvik,Plain http URL,5.00,false,in stock
+HomeGoods Direct,/products/relative-link,5000000090037,XX-3,Norvik,Relative URL,5.00,false,in stock
+HomeGoods Direct,https://homegoods-direct.example/products/bad-ean,5000000090045,XX-4,Norvik,EAN with wrong check digit,5.00,false,in stock
+ValueTrade UK,https://valuetrade-uk.example/products/bad-price,5000000090051,XX-5,Norvik,Price is text,five pounds,false,in stock
+ValueTrade UK,https://valuetrade-uk.example/products/no-vat-flag,5000000090068,XX-6,Norvik,VAT flag missing,5.00,,in stock
+,https://valuetrade-uk.example/products/no-retailer,5000000090075,XX-7,Norvik,Retailer missing,5.00,false,in stock
+Brightwell Wholesale,https://brightwell-wholesale.example/products/no-ids,,,,"Imports but cannot be matched (no EAN, no brand+MPN)",5.00,false,in stock

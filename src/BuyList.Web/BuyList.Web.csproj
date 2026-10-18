@@ -13,6 +13,11 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The sample CSVs ship with the app so the Import page can offer them for download. -->
+    <Content Include="..\..\samples\*.csv" Link="samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>

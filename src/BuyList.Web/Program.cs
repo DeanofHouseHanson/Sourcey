@@ -22,6 +22,7 @@ builder.Services.AddOptions<RankingOptions>().Bind(config.GetSection(RankingOpti
 builder.Services.AddOptions<FbaFeeOptions>().Bind(config.GetSection(FbaFeeOptions.SectionName));
 
 builder.Services.AddApplication();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddInfrastructure(config);
 builder.Services.AddSingleton<ISingleUserAuthenticator, SingleUserAuthenticator>();
