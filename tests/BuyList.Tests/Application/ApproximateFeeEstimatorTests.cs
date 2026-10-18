@@ -53,4 +53,19 @@ public class ApproximateFeeEstimatorTests
     [Fact]
     public void Result_is_labelled_as_an_approximation() =>
         Assert.StartsWith("approx", Make(Tiers).Estimate(new FeeRequest(10m)).Basis);
+
+    [Fact]
+    public void A_fba_fee_known_from_keepa_overrides_the_weight_table()
+    {
+        var e = Make(Tiers).Estimate(new FeeRequest(24.00m, WeightGrams: 50, KnownFbaFee: 2.89m));
+        Assert.Equal(2.89m, e.FbaFee);                 // not the 100g tier's 1.80
+        Assert.Equal(3.60m, e.ReferralFee);            // referral is still the configured percentage
+        Assert.Contains("Keepa", e.Basis);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0.0)]
+    public void A_missing_or_zero_known_fee_falls_back_to_the_table(double? known) =>
+        Assert.Equal(1.80m, Make(Tiers).Estimate(new FeeRequest(10m, 50, known is null ? null : (decimal)known)).FbaFee);
 }

@@ -14,6 +14,7 @@ public class BuyListDbContext : DbContext
     public DbSet<AmazonSnapshot> AmazonSnapshots => Set<AmazonSnapshot>();
     public DbSet<Opportunity> Opportunities => Set<Opportunity>();
     public DbSet<BlocklistEntry> BlocklistEntries => Set<BlocklistEntry>();
+    public DbSet<AsinCandidate> AsinCandidates => Set<AsinCandidate>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder builder)
     {
@@ -86,6 +87,13 @@ public class BuyListDbContext : DbContext
             e.HasIndex(o => o.Status);
             e.HasOne(o => o.Product).WithMany().HasForeignKey(o => o.ProductId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(o => o.SourceOffer).WithMany().HasForeignKey(o => o.SourceOfferId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<AsinCandidate>(e =>
+        {
+            e.Property(c => c.Asin).IsRequired().HasMaxLength(10);
+            e.HasIndex(c => new { c.ProductId, c.Asin }).IsUnique();
+            e.HasOne(c => c.Product).WithMany(p => p.AsinCandidates).HasForeignKey(c => c.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<BlocklistEntry>(e =>

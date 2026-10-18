@@ -1,0 +1,80 @@
+@page
+@using BuyList.Application.Formatting
+@model BuyList.Web.Pages.Unresolved.IndexModel
+@{ ViewData["Title"] = "Unresolved products"; }
+
+<h1 class="h3">Unresolved products</h1>
+<p class="text-muted">
+    Products whose EAN Keepa couldn't turn into one Amazon listing. They have no opportunities until settled.
+    Choosing an option costs no Keepa tokens.
+</p>
+
+@if (Model.Message is not null)
+{
+    <div class="alert alert-info" role="status">@Model.Message</div>
+}
+
+@if (Model.Ambiguous.Count == 0 && Model.NotFound.Count == 0)
+{
+    <p>Nothing to resolve.</p>
+}
+
+@foreach (var p in Model.Ambiguous)
+{
+    var options = BuyList.Web.Pages.Unresolved.IndexModel.Ordered(p).ToList();
+    <section class="card mb-3">
+        <div class="card-body">
+            <h2 class="h6 mb-1">
+                @(p.Title ?? "Untitled product")
+                <span class="badge text-bg-warning ms-2">Maps to multiple ASINs</span>
+            </h2>
+            <div class="small text-muted mb-2">
+                EAN <code>@p.Ean</code>
+                @foreach (var o in p.SourceOffers)
+                {
+                    <span class="ms-3">@o.RetailerName @Gbp.Format(o.BuyPriceIncVat)
+                        <a href="@o.SourceUrl" target="_blank" rel="noopener noreferrer">source</a></span>
+                }
+            </div>
+
+            <partial name="_CandidateTable" model="(p.Id, options.Take(BuyList.Web.Pages.Unresolved.IndexModel.OptionsShownUpFront).ToList())" />
+            @if (options.Count > BuyList.Web.Pages.Unresolved.IndexModel.OptionsShownUpFront)
+            {
+                <details class="mt-1">
+                    <summary class="small">+@(options.Count - BuyList.Web.Pages.Unresolved.IndexModel.OptionsShownUpFront) more option@(options.Count - BuyList.Web.Pages.Unresolved.IndexModel.OptionsShownUpFront == 1 ? "" : "s")</summary>
+                    <partial name="_CandidateTable" model="(p.Id, options.Skip(BuyList.Web.Pages.Unresolved.IndexModel.OptionsShownUpFront).ToList())" />
+                </details>
+            }
+            <form method="post" asp-page-handler="Dismiss" class="mt-2">
+                <input type="hidden" name="productId" value="@p.Id" />
+                <button class="btn btn-sm btn-outline-secondary" type="submit">None of these</button>
+            </form>
+        </div>
+    </section>
+}
+
+@if (Model.NotFound.Count > 0)
+{
+    <h2 class="h5 mt-4">Not found on Amazon</h2>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>Product</th><th>EAN</th><th>Offers</th></tr></thead>
+            <tbody>
+            @foreach (var p in Model.NotFound)
+            {
+                <tr>
+                    <td>@(p.Title ?? "Untitled product")</td>
+                    <td><code>@p.Ean</code></td>
+                    <td>
+                        @foreach (var o in p.SourceOffers)
+                        {
+                            <span class="me-3">@o.RetailerName @Gbp.Format(o.BuyPriceIncVat)
+                                <a href="@o.SourceUrl" target="_blank" rel="noopener noreferrer">source</a></span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

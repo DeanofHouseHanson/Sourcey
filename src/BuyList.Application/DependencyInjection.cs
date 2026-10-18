@@ -1,3 +1,5 @@
+using BuyList.Application.Eligibility;
+using BuyList.Application.Import;
 using BuyList.Application.Profit;
 using BuyList.Application.Ranking;
 using BuyList.Application.Risk;
@@ -13,6 +15,10 @@ public static class DependencyInjection
         services.AddSingleton<ProfitCalculator>();
         services.AddSingleton<RiskClassifier>();
         services.AddSingleton<OpportunityScorer>();
+        services.AddSingleton<IEligibilityChecker, ManualEligibilityChecker>();
+        services.AddSingleton<OfferCsvParser>();
+        services.AddSingleton<OfferRowValidator>();
+        services.AddSingleton<OfferFileValidator>();
         return services;
     }
 }

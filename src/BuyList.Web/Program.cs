@@ -2,7 +2,9 @@ using BuyList.Application;
 using BuyList.Application.Options;
 using BuyList.Infrastructure;
 using BuyList.Infrastructure.Persistence;
+using BuyList.Web.Cli;
 using BuyList.Web.Security;
+using BuyList.Infrastructure.Seeding;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -22,9 +24,16 @@ builder.Services.AddOptions<RankingOptions>().Bind(config.GetSection(RankingOpti
 builder.Services.AddOptions<FbaFeeOptions>().Bind(config.GetSection(FbaFeeOptions.SectionName));
 
 builder.Services.AddApplication();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddInfrastructure(config);
 builder.Services.AddSingleton<ISingleUserAuthenticator, SingleUserAuthenticator>();
+
+// Live Keepa needs a key; fail now with a clear message rather than on the first request.
+if (!config.GetValue("Keepa:UseFake", true) && string.IsNullOrWhiteSpace(config["Keepa:ApiKey"]))
+    throw new InvalidOperationException(
+        "Keepa:UseFake is false but no API key is configured. Set Keepa__ApiKey (environment) or Keepa:ApiKey (user secrets), " +
+        "or set Keepa:UseFake=true.");
 
 // Without a password hash nobody can log in. Fail fast outside Development rather than run unprotected.
 if (string.IsNullOrWhiteSpace(config[$"{AuthOptions.SectionName}:PasswordHash"]) && !builder.Environment.IsDevelopment())
@@ -82,6 +91,16 @@ using (var scope = app.Services.CreateScope())
 
 if (devFallbackActive)
     app.Logger.LogWarning("Auth:PasswordHash is not set; using the development password '{Password}'. Set a real hash via user secrets.", DevFallbackPassword);
+
+if (args.Length > 0 && CliCommands.Names.Contains(args[0]))
+    return await CliCommands.RunAsync(args, app.Services);
+
+if (config.GetValue("Seed:OnStartup", false) && config.GetValue("Keepa:UseFake", true))
+{
+    using var scope = app.Services.CreateScope();
+    var seeded = await scope.ServiceProvider.GetRequiredService<DemoSeeder>().SeedAsync();
+    app.Logger.LogInformation("Demo seed: {Message}", seeded.Message);
+}
 
 app.UseForwardedHeaders();
 if (!app.Environment.IsDevelopment())
