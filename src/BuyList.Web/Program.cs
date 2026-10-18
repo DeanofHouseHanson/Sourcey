@@ -1,3 +1,4 @@
+using BuyList.Application;
 using BuyList.Application.Options;
 using BuyList.Infrastructure;
 using BuyList.Infrastructure.Persistence;
@@ -18,6 +19,9 @@ builder.Services.AddOptions<KeepaOptions>().Bind(config.GetSection(KeepaOptions.
 builder.Services.AddOptions<ProfitOptions>().Bind(config.GetSection(ProfitOptions.SectionName));
 builder.Services.AddOptions<RiskOptions>().Bind(config.GetSection(RiskOptions.SectionName));
 builder.Services.AddOptions<RankingOptions>().Bind(config.GetSection(RankingOptions.SectionName));
+builder.Services.AddOptions<FbaFeeOptions>().Bind(config.GetSection(FbaFeeOptions.SectionName));
+
+builder.Services.AddApplication();
 
 builder.Services.AddInfrastructure(config);
 builder.Services.AddSingleton<ISingleUserAuthenticator, SingleUserAuthenticator>();
