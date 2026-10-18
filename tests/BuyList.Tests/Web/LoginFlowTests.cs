@@ -15,11 +15,9 @@ public sealed class LoginFlowTests : IClassFixture<LoginFlowTests.Factory>
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Development"); // uses the dev fallback password "changeme"
-            builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:BuyList"] = $"Data Source={_db}",
-                ["Auth:PasswordHash"] = null
-            }));
+            // UseSetting (not ConfigureAppConfiguration): Program.cs reads configuration before the host is built.
+            builder.UseSetting("ConnectionStrings:BuyList", $"Data Source={_db}");
+            builder.UseSetting("Seed:OnStartup", "false");
         }
     }
 

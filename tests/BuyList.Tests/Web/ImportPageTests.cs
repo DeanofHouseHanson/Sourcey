@@ -17,8 +17,8 @@ public sealed class ImportPageTests : IClassFixture<ImportPageTests.Factory>
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Development");
-            builder.ConfigureAppConfiguration((_, c) => c.AddInMemoryCollection(new Dictionary<string, string?>
-            { ["ConnectionStrings:BuyList"] = $"Data Source={_db}" }));
+            builder.UseSetting("ConnectionStrings:BuyList", $"Data Source={_db}");
+            builder.UseSetting("Seed:OnStartup", "false");
         }
     }
 

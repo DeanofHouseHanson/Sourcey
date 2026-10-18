@@ -35,6 +35,12 @@ namespace BuyList.Infrastructure.Persistence.Migrations
                     b.Property<int>("FbaSellerCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("FbaSellerCountIsApprox")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long?>("KeepaFbaFee")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int?>("MonthlySales")
                         .HasColumnType("INTEGER");
 
@@ -42,6 +48,9 @@ namespace BuyList.Infrastructure.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("SalesRank")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("WeightGrams")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
@@ -151,6 +160,10 @@ namespace BuyList.Infrastructure.Persistence.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AsinLookupStatus")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Brand")
                         .HasColumnType("TEXT");
 
@@ -159,6 +172,9 @@ namespace BuyList.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("KeepaCheckedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ManualFlags")

@@ -14,6 +14,14 @@ public class Product
     public string? Title { get; set; }
     public string? ImageUrl { get; set; }
 
+    public Enums.AsinLookupStatus AsinLookupStatus { get; set; }
+
+    /// <summary>
+    /// UTC time of the last Keepa request about this product (lookup or refresh), successful or not.
+    /// Drives the refresh age so a product that returns nothing isn't re-requested (and re-charged) every run.
+    /// </summary>
+    public DateTime? KeepaCheckedAt { get; set; }
+
     /// <summary>Manual Gated / Hazmat / IP-complaint toggles (placeholder until SP-API restrictions are wired in).</summary>
     public Enums.OpportunityFlags ManualFlags { get; set; }
 

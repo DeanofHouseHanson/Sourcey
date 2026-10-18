@@ -13,6 +13,7 @@ dotnet run --project src/BuyList.Web           # http://localhost:5235 (Developm
 export PATH="$PATH:$HOME/.dotnet/tools"        # for dotnet-ef (dotnet tool install --global dotnet-ef --version 8.*)
 dotnet ef migrations add <Name> -p src/BuyList.Infrastructure -s src/BuyList.Web -o Persistence/Migrations
 dotnet run --project src/BuyList.Web -- hash-password
+dotnet run --project src/BuyList.Web -- seed | refresh | check-keepa [ASIN...]   # see docs/PLAN.md "Phase 4"
 ```
 
 ## Layout and dependency rule
@@ -28,6 +29,7 @@ Business logic goes in Application as plain classes with constructor-injected `I
 - Match on EAN/GTIN, else brand + MPN. **Never on title alone.**
 - Missing monthly-sales data => VeryHigh risk + `NoSalesData` flag; never guess a value.
 - Money is `decimal`; times are UTC (`DateTime.UtcNow`); UI shows GBP (`en-GB`).
+- **Keepa tokens are real money/limits.** Never loop calls, never raise `MaxTokensPerRun`/batch sizes without asking, and use `check-keepa` (max 3 ASINs) for live checks. `seed` must stay offline.
 - Default implementations (`FakeKeepaClient`, `ApproximateFeeEstimator`) sit behind interfaces so real ones drop in via DI/config.
 
 ## Conventions and gotchas
@@ -38,4 +40,5 @@ Business logic goes in Application as plain classes with constructor-injected `I
 - Schema changes need an EF migration; the app applies migrations on startup.
 - Every new behaviour needs xUnit tests with worked, hand-checked numbers (show the arithmetic in a comment, as in `ProfitCalculatorTests`).
 - Work one phase at a time, on a branch `claude/phase-N-<slug>`, tests green, commit with a clear message, then update `docs/PLAN.md`. Ask the owner before major decisions not covered by the plan.
+- Web tests: set config with `builder.UseSetting(...)`, not `ConfigureAppConfiguration` (Program.cs reads config before the host is built).
 - Razor Pages are behind a global `AuthorizeFolder("/")`; new public endpoints must be a deliberate exception.

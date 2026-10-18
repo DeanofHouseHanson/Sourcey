@@ -2,7 +2,7 @@
 
 A small, self-hosted Amazon UK arbitrage sourcing tool (ASP.NET Core 8, Razor Pages, EF Core, SQLite). Import supplier prices from CSV, match them to Amazon listings by EAN, enrich with Keepa data, and see a ranked, risk-adjusted list of what to buy. Single user.
 
-> **Status:** Phases 1-3 of 7 done (scaffold, auth, profit/risk/ranking logic, CSV import + matching). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
+> **Status:** Phases 1-4 of 7 done (scaffold, auth, profit/risk/ranking, CSV import + matching, Keepa client + enrichment + opportunities). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
 
 ## Layout
 
@@ -49,17 +49,31 @@ All in `src/BuyList.Web/appsettings.json` (override with user secrets / environm
 | `ConnectionStrings:BuyList` | SQLite path |
 | `DataProtection:KeysPath` | optional folder to persist cookie keys so logins survive restarts |
 
-### Keepa API key
+### Keepa API key and token safety
 
-The key is **never** stored in source or `appsettings.json`, and is never logged.
+The key is **never** stored in source or `appsettings.json`, and is never logged (the client strips HttpClient logging and never puts URLs in messages).
 
 ```bash
 # development
 cd src/BuyList.Web && dotnet user-secrets set "Keepa:ApiKey" "<your key>"
-# production
+# production / EC2: environment (an `export` only lasts for that shell; for the service use the systemd EnvironmentFile, mode 600)
 export Keepa__ApiKey=<your key>
+export Keepa__UseFake=false        # default is true = offline demo data, no key needed
 ```
-Then set `Keepa:UseFake` to `false` (the real client arrives in Phase 7; until then the fake client is used). Amazon data comes from Keepa only; Amazon pages are never scraped.
+With `Keepa:UseFake=false` the app refuses to start without a key. Nothing calls Keepa at startup. Amazon data comes from Keepa only; Amazon pages are never scraped.
+
+**How tokens are protected** (all configurable under `Keepa`): the balance is read from the free `/token` endpoint before any spend; `MinTokensReserve` (20) is never touched;
+each refresh run spends at most `MaxTokensPerRun` (100); each product costs about `TokensPerProduct` (3: 1 + 2 for Buy Box data), raised automatically if Keepa charges more;
+data younger than `RefreshAgeHours` (24) is never re-fetched; EANs Keepa can't find are retried only after `UnresolvedRetryDays` (7); anything over budget waits for the next run.
+
+**First live check (costs ~3 tokens per ASIN):**
+```bash
+dotnet run --project src/BuyList.Web -- check-keepa              # balance only (free)
+dotnet run --project src/BuyList.Web -- check-keepa B0XXXXXXXX   # up to 3 ASINs, prints what was parsed
+dotnet run --project src/BuyList.Web -- refresh                  # match -> look up/refresh within budget -> recalculate
+dotnet run --project src/BuyList.Web -- seed                     # demo data into an EMPTY db (offline, never uses tokens)
+```
+In Development (with `UseFake=true`) an empty database is seeded with demo data on startup (`Seed:OnStartup`).
 
 ## Importing supplier prices (CSV)
 

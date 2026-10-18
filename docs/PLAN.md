@@ -11,12 +11,12 @@ Personal use, single login, self-hosted (small VPS / EC2 / Azure App Service).
 | 1 | Scaffold, data model, migrations, config, auth, README | **Done** | `claude/phase-1-scaffold` |
 | 2 | Profit calculator, fee estimator, risk banding, scoring, ranking + tests | **Done** | `claude/phase-2-profit-risk-ranking` |
 | 3 | CSV import with validation, EAN/brand+MPN matching | **Done** | `claude/phase-3-import-matching` |
-| 4 | `IKeepaClient` + `FakeKeepaClient`, enrichment, opportunity calculation, seed data | Next | |
-| 5 | Buy List page: filters, sorting, links, risk badges, status actions, CSV export | | |
+| 4 | **Real** `KeepaClient` (token-safe) + `FakeKeepaClient`, enrichment, opportunity calculation, seed data, CLI | **Done** (live API not yet exercised) | `claude/phase-4-keepa-enrichment-opportunities` |
+| 5 | Buy List page: filters, sorting, links, risk badges, status actions, CSV export | Next | |
 | 6 | Budget mode, blocklist page + eligibility, refresh job | | |
-| 7 | Real `KeepaClient` (token-aware, cached) behind `Keepa:UseFake` | | |
+| 7 | Live-API verification on EC2 (`check-keepa`), parsing fixes from real responses, hardening | After owner runs it | |
 
-Phases are cumulative: each branch is based on the previous one. Test count after phase 3: 198, all passing.
+Phases are cumulative: each branch is based on the previous one. Test count after phase 4: 289, all passing.
 
 ## Architecture
 
@@ -110,25 +110,55 @@ price/VAT/EAN/stock forms, multi-error rows), parser edge cases, file-level acco
 variant/learning/idempotency, import upsert + re-match, and end-to-end page tests through the real host (login, preview writes nothing, confirm, rejected
 download, expired token, non-csv refused, links open with `rel="noopener noreferrer"`).
 
-## Phase 4 – Keepa abstraction, fake client, enrichment, opportunities, seed data
+## Done: Phase 4 – Keepa, enrichment, opportunities, seed (reference)
 
-- **Domain model** (`Application/Keepa`): `KeepaProduct { Asin, Title, Brand, ImageUrl, Ean, Mpn, Avg90BuyBox (decimal?), SalesRank (int?),
-  SalesRankSummary, FbaSellerCount, AmazonOnListing, MonthlySold (int?), WeightGrams (int?), FetchedAt }`.
-  `IKeepaClient`: `Task<IReadOnlyList<KeepaProduct>> GetByAsinsAsync(IEnumerable<string>, ct)` and
-  `GetByCodesAsync(IEnumerable<string> eansOrUpcs, ct)`; surface token state via `KeepaTokenStatus` (remaining, refill rate) if useful.
-  Missing `MonthlySold` stays **null**.
-- `FakeKeepaClient` (Infrastructure): deterministic seeded catalogue (~40 products) with a spread of risk levels, some Amazon-on-listing,
-  some with no sales data, some with no avg price. Selected when `Keepa:UseFake` is true (default); needs no key.
-- **Snapshots**: write `AmazonSnapshot` rows from `KeepaProduct`; a product's "current" snapshot = latest. Respect `Keepa:RefreshAgeHours`
-  (don't refetch fresh snapshots).
-- **`OpportunityService.RecalculateAsync`**: for each matched, in-stock-or-unknown `SourceOffer` with a snapshot that has `Avg90BuyBox`:
-  `ProfitCalculator` -> `OpportunityScorer` -> upsert `Opportunity` (key = `SourceOfferId`; **preserve `Status`** across recalcs).
-  Set `Flags`: `NoSalesData`, plus `Gated/Hazmat/IpComplaintProne/Blocklisted` from `IEligibilityChecker` (phase 6 supplies the real one;
-  a no-op stub now). Delete opportunities whose offer/product no longer qualifies.
-- **Seed**: `dotnet run --project src/BuyList.Web -- seed` (and automatic in Development when the DB is empty) loads the sample CSV
-  through the real import path + fake Keepa + recalculation, so the Buy List is populated on first run. Idempotent.
-- **Tests**: enrichment skips fresh snapshots; opportunity upsert keeps Status; missing sales => flagged VeryHigh; missing price => no opportunity;
-  fake client determinism.
+The owner chose to build the **real** Keepa client now (fake is for tests/offline demo only). `Keepa:UseFake` defaults to `true` in appsettings
+(so a fresh clone runs with no key); set `Keepa__UseFake=false` + `Keepa__ApiKey` for live data. `UseFake=false` without a key **fails at startup** with a clear message.
+Nothing calls Keepa at startup; tokens are only spent by `refresh`, `check-keepa <ASIN>` and (Phase 6) the refresh job.
+
+**Contracts** (`Application/Keepa`): `IKeepaClient { GetTokenStatusAsync; GetByAsinsAsync(asins, maxTokens); GetByCodesAsync(codes, maxTokens) }` ->
+`KeepaFetchResult { Products, NotFetched, TokensUsed, Tokens, Throttled }`. `KeepaProduct` = ASIN, title, brand, image URL, MPN, canonical EANs,
+`Avg90BuyBox`, sales rank (current/90d avg), `SalesRankDrops30`, `FbaSellerCount` (+`FbaSellerCountIsApprox`), `AmazonOnListing`, `MonthlySold`,
+`WeightGrams`, `FbaPickAndPackFee`. Missing data is `null` - never a guess.
+
+**`KeepaClient` (Infrastructure/Keepa)** - request: `GET /product?key=..&domain=2&asin=A,B,..&stats=90&history=0&buybox=1` (or `&code=` for EANs).
+No `offers` parameter (it is expensive). Cost model: 1 base token + 2 for `buybox=1` = **3 per product** (`Keepa:TokensPerProduct`).
+*Never over-spend, in layers:* (1) balance read from the free `/token` endpoint before spending; (2) per call: `min(maxTokens, tokensLeft - MinTokensReserve)`
+- Keepa lets balances go negative, so this is checked **before** each batch, re-planned after every response from the returned `tokensLeft`; (3) the planning
+cost per item is `max(configured, highest cost Keepa has actually charged this session)`; (4) code lookups can return several products per code so they
+are planned at 2x and sent 5 at a time; (5) a 429 stops the run (balance from the error body is remembered) and reports the rest in `NotFetched`;
+(6) `Keepa:MaxTokensPerRun` (default 100) is a hard per-run ceiling shared by both enrichment stages; (7) 5xx/timeouts: 2 bounded retries with backoff, 4xx not retried.
+*Key safety:* the key is only in the query string (Keepa has no header option), so `RemoveAllLoggers()` strips HttpClient logging, our logs/exceptions never include URLs,
+ASIN/code inputs are regex-validated (no query injection), and tests assert the key never appears in logs or exception text.
+*Parsing* (`KeepaResponseParser`, Keepa quirks confined here): prices are integer pence; -1/-2 = no data; stats arrays are indexed by csv type -
+**0** Amazon price (>0 => Amazon on listing), **3** sales rank, **11** total new offers, **18** Buy Box incl. shipping (`avg90[18]` = 90-day average Buy Box, needs `buybox=1`),
+**34** new FBA offer count (falls back to index 11 and sets `FbaSellerCountIsApprox`). `monthlySold` is Keepa's "bought in past month" (null for many ASINs =>
+"no sales data", by design). Package weight (or item weight) and `fbaFees.pickAndPackFee` (pence, ex tax) are captured; the fee **overrides** the approximate FBA table.
+Image is built from `imagesCSV` (filename allow-list). *The fixtures in tests are hand-written from Keepa's published model, not recorded - see Phase 7.*
+
+**`EnrichmentService`** (`IEnrichmentService`): (1) *resolve* stub products (EAN, no ASIN) with code lookups - the response already contains the market data, so the snapshot
+is saved immediately (no second request); one ASIN -> `Resolved`; none -> `NotFound` (retry after `Keepa:UnresolvedRetryDays`=7); several -> `Ambiguous` (**never auto-picked**,
+needs the owner); an ASIN we already hold -> the stub is merged into it. (2) *refresh* products with an ASIN whose `KeepaCheckedAt` is older than `Keepa:RefreshAgeHours`
+(never-fetched first, then oldest). Only products with at least one non-out-of-stock offer are worth tokens. `KeepaCheckedAt` is stamped for every request, even empty answers,
+so a product Keepa has nothing on is not re-charged each run. Budget leftovers are `ProductsDeferred`. `B0FAKE*` ASINs are never sent to the live client.
+Snapshots store `FbaSellerCount` (0 + `FbaSellerCountIsApprox` when unknown), `WeightGrams`, `KeepaFbaFee`.
+
+**`OpportunityService`** (`IOpportunityService.RecalculateAsync`): for each matched in-stock offer with a latest snapshot that has an `Avg90BuyBox`: `ProfitCalculator`
+(with weight + Keepa FBA fee) -> `OpportunityScorer` (buy cash = `BuyPriceIncVat`) -> upsert by `SourceOfferId`, **preserving `Status`**. `Opportunity.MaxBuyPrice` = inc-VAT value. Flags: `NoSalesData` +
+`IEligibilityChecker` (manual toggles now; blocklist in Phase 6). Rows that stop qualifying are deleted **only if still `New`** (Checked/Bought/Ignored are kept). Amazon-on-listing, negative-profit and stale
+rows still get opportunities - **the Buy List page filters them** (Phase 5).
+
+**`IRefreshPipeline`** = match pending -> enrich -> recalculate, single-flight (a second concurrent run is refused so tokens are never double-spent). Phase 6's job + "Refresh now" button call this.
+
+**`FakeKeepaClient`**: 38-entry deterministic catalogue keyed on `samples/offers.sample.csv` EANs (embedded `fake-catalogue.json`): good/bad margins, 4 Amazon-on-listing, 2 no-sales-data, 1 no-price,
+1 approximate FBA count, sales from 4 to 600/month. Spends nothing.
+
+**CLI** (`dotnet run --project src/BuyList.Web -- <cmd>`): `seed` (empty DB only; **always uses the fake catalogue**, so it never spends tokens even with `UseFake=false`; don't seed a DB you'll point at live data),
+`refresh` (runs the pipeline with the configured client and prints a summary incl. tokens), `check-keepa [ASIN ...]` (live API, **max 3 ASINs**, prints balance (free) and parsed fields; no args = balance only).
+In Development with `UseFake=true` and `Seed:OnStartup=true` (set in appsettings.Development.json) an empty DB is seeded automatically.
+
+Schema changes (migration `KeepaEnrichment`): `Product.AsinLookupStatus`, `Product.KeepaCheckedAt`; `AmazonSnapshot.FbaSellerCountIsApprox`, `.WeightGrams`, `.KeepaFbaFee`.
+Test-suite note: web tests must set config with `builder.UseSetting(...)`, **not** `ConfigureAppConfiguration` - `Program.cs` reads configuration before the host is built, so the latter silently doesn't apply.
 
 ## Phase 5 – Buy List page (home)
 
@@ -171,18 +201,15 @@ download, expired token, non-csv refused, links open with `rel="noopener norefer
 - **Tests**: planner (never exceeds budget, ordering by value density, partial last item, nothing affordable, excluded rows skipped),
   eligibility, refresh orchestration with fake client (batching, skips fresh, single-flight).
 
-## Phase 7 – Real KeepaClient
+## Phase 7 – Live verification and hardening (needs the owner's key + network)
 
-`Infrastructure/Keepa/KeepaClient` using `IHttpClientFactory` (typed client). `GET {BaseUrl}product?key=..&domain=2&asin=A,B,..&stats=90&history=0..`
-(or `code=` for EAN lookups); batch up to `Keepa:BatchSize` (Keepa allows up to 100 ASINs/request). Read `tokensLeft`,
-`refillIn`, `refillRate`, `tokensConsumed` from each response; stop/back off when `tokensLeft < MinTokensReserve` (delay until refill,
-or return partial results and mark remainder as deferred). Handle 429/5xx with bounded retry + jitter. Parse Keepa's scaled prices
-(integer pence-style values; -1 = no data -> null) into `decimal` GBP; read 90-day average Buy Box from `stats.avg90`, `monthlySold` for
-sales, FBA seller count from `stats.offerCountFBA`/`totalOfferCount`, Amazon-on-listing from `stats.buyBoxIsAmazon`/offers (verify field
-names against current Keepa docs when implementing – do not guess). **Redact the key** from every log/exception (it is in the query string):
-use a logging-safe request description, and don't include `RequestUri` in exceptions. Cache = `AmazonSnapshot` rows with
-`Keepa:RefreshAgeHours`. Selection via `Keepa:UseFake`; if `UseFake=false` and no key, fail fast at startup with a clear message.
-Tests use a fake `HttpMessageHandler` with recorded JSON fixtures (no network, no key). Not verified against the live API until the owner supplies a key.
+The client is built (Phase 4) but has only been tested against hand-written fixtures; this sandbox can't reach `api.keepa.com` and has no key. On the EC2 box:
+1. `export Keepa__ApiKey=...` (or the systemd `EnvironmentFile`), then `dotnet run --project src/BuyList.Web -- check-keepa` (free: shows balance).
+2. `check-keepa B0XXXXXXXX` on 1-3 real ASINs you know. Check: 90d avg Buy Box matches Keepa's chart; sales rank; FBA sellers; Amazon-on-listing; monthly sold; weight/fee.
+3. Paste any surprise (key redacted!) back. Things most likely to need adjusting: whether `stats` is populated with `history=0` (if not, drop `history=0` in `KeepaClient`), whether `avg90[18]` is
+   present for all products, the real `tokensConsumed` per product (then tune `Keepa:TokensPerProduct`), and how often `monthlySold` is null.
+4. Then `refresh` with `Keepa__UseFake=false` against a copy of the DB (or a fresh one with a small CSV) and compare opportunities to Seller Central / Keepa by hand.
+Open follow-ups: UI to pick an ASIN for `Ambiguous` EANs; consider `salesRankDrops30` as a *displayed* (not substituted) demand hint; Amazon-in-stock-percent over 90 days.
 
 ## Final polish (after phase 7)
 
@@ -220,6 +247,11 @@ README deployment section (below), `systemd` unit, Caddy/nginx reverse-proxy exa
 | D14 | Preview cached server-side by token, re-validated on confirm | Avoids huge hidden fields and client tampering |
 | D15 | Re-importing an unchanged price still bumps `CheckedAt` | The import is the owner re-confirming the price; drives staleness |
 | D16 | Brand+MPN never creates products; ambiguous/variant matches are refused | Prevents wrong-product matches; Keepa can't look up by MPN |
+| D18 | Real Keepa client built in Phase 4, fake kept for tests/seed/offline | Owner supplies a key; earlier real data beats delayed verification |
+| D19 | Token safety is layered: free balance check, reserve, per-call and per-run caps, learned real cost, 2x for code lookups | "Do not go over the limit" - Keepa permits negative balances, so the check must precede spending |
+| D20 | Ambiguous EAN (several ASINs) is never auto-picked | A wrong ASIN means buying the wrong product |
+| D21 | Sales come only from Keepa `monthlySold`; null => NoSalesData, no proxy | Spec: never guess; many ASINs will show as no-data |
+| D22 | `seed` always uses the fake catalogue | Seeding must never spend tokens |
 | D17 | Rows with extra values vs header are rejected | Catches unquoted-comma column shifts that would corrupt price/title silently |
 
 ## Open questions for the owner
@@ -227,3 +259,5 @@ README deployment section (below), `systemd` unit, Caddy/nginx reverse-proxy exa
 - Confirm FBA fee tiers / referral % per category you actually sell in.
 - Are supplier CSV prices usually ex-VAT (trade) or inc-VAT (retail)? (`vat_included` handles both, but defaults in the sample file follow your answer.)
 - Preferred default branch name and whether PRs should be used per phase.
+- `monthlySold` is null for many ASINs, which will rank them last as "no sales data". Happy with that, or should a clearly-labelled proxy (e.g. sales-rank drops) be shown alongside?
+- For EANs that map to several ASINs, should the app offer a "choose the ASIN" screen (planned) or pick the best-ranked automatically?
