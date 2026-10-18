@@ -2,7 +2,7 @@
 
 A small, self-hosted Amazon UK arbitrage sourcing tool (ASP.NET Core 8, Razor Pages, EF Core, SQLite). Import supplier prices from CSV, match them to Amazon listings by EAN, enrich with Keepa data, and see a ranked, risk-adjusted list of what to buy. Single user.
 
-> **Status:** Phases 1-4 of 7 done (scaffold, auth, profit/risk/ranking, CSV import + matching, Keepa client + enrichment + opportunities). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
+> **Status:** Phases 1-5 of 7 done (scaffold, auth, profit/risk/ranking, CSV import + matching, Keepa client + enrichment + opportunities, Buy List page with dark theme). See `docs/PLAN.md` for the plan and status, and `CLAUDE.md` for contributor/agent instructions.
 
 ## Layout
 
@@ -74,6 +74,12 @@ dotnet run --project src/BuyList.Web -- refresh                  # match -> look
 dotnet run --project src/BuyList.Web -- seed                     # demo data into an EMPTY db (offline, never uses tokens)
 ```
 In Development (with `UseFake=true`) an empty database is seeded with demo data on startup (`Seed:OnStartup`).
+
+## The Buy List (home page)
+
+Dark-themed, sortable and filterable table of the best things to buy, ranked by risk-adjusted monthly profit (toggle **Raw** for unadjusted). By default it hides loss-making items, items Amazon sells itself,
+prices older than 24h, ignored and bought items; a line under the filters says how many each is hiding. Missing data reads "no data". Per row: set status (New / Checked / Bought / Ignored), open the source page, Amazon UK, Keepa or SellerAmp.
+**Export CSV** downloads exactly what the filters show. **Refresh now** matches new offers, looks up Amazon data from Keepa (within the token cap) and recalculates. If the page is empty it tells you why and what to do next.
 
 ## Importing supplier prices (CSV)
 
