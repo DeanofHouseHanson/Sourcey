@@ -1,144 +1,158 @@
 # Plan v2 – Automated FBA deal finder
 
-> Replaces the original plan (kept for reference in `docs/archive/PLAN-v1.md`; its "Phase 1–5 reference" sections still describe how the existing code works).
-> Status: **DRAFT for owner approval.** Nothing below is built yet except what is listed under "Reuse".
+> Replaces the original plan (archived in `docs/archive/PLAN-v1.md`; its "Done: Phases 1-5 (reference)" sections still describe how the existing code works).
+> Status: **DRAFT v2.1 for owner approval**, updated with the owner's answers. Only the "Reuse" items exist today.
 
-## 1. Goal
+## 1. Goal and constraints
 
 A website that finds products which will make a profit on Amazon UK FBA, **automatically**, so the owner reviews a short ranked list of actionable deals instead of hand-feeding CSVs.
 
-Decisions already made by the owner:
-- Start a new plan; **reuse the working code** where it fits.
-- **Amazon-first**: start from Amazon/Keepa data to find products that sell well and hold their price, then find where to buy them below a computed maximum buy price.
-- **Single user now, other sellers later**: build for one seller account, but do not paint the design into a corner (see section 5).
-- Owner has a **Keepa API subscription** and a **confirmed Amazon seller account** (SP-API is possible).
+Owner decisions and facts:
+- New plan, **reuse the working code**.
+- **Amazon-first** discovery: find products that sell well and hold their price, compute the maximum buy price, then find a source below it.
+- **Single user now, other sellers later** (design seam only; see section 5).
+- **Website only for now.** Alerts will come later as a **Discord bot** (explicitly *not* to be implemented yet).
+- **No category is off limits.** (The account plan and gating still decide what can actually be sold; the app flags them.)
+- **Not wholesale: no capital for it yet.** Sourcing is retail/online arbitrage with a **small budget**, so capital efficiency matters as much as profit.
+- Amazon seller account: **basic (Individual) plan**. See the blocker below.
+- Keepa: **"Pro" plan** (to be confirmed as an *API* plan; see Phase 0).
 
-Success looks like: every morning the site (or an alert) shows the best few deals, each with real fees, a stable price history, a max buy price, where to buy, and whether the owner is allowed to sell it.
+### Blockers and risks the owner should decide on first
 
-## 2. The pipeline
+1. **Individual plan vs Buy Box.** Amazon's sources and seller guides say Individual sellers are **not eligible to win the Buy Box**, and also can't use bulk tools or ads. Our whole profit model sells at the *Buy Box* price. If the account can't win the Buy Box, real sales will be far lower than the figures shown. Amazon's own pages state that Individual costs 75p per item sold and Professional is £25/month (ex VAT) with no per-item fee, break-even about 35 units/month. **Recommendation: move to Professional before relying on any deal this app finds.** This is the owner's call.
+2. **SP-API needs Professional.** Amazon's developer documentation says private seller applications require a Professional account; Individual accounts are not eligible. So the SP-API work (real fees, gating checks) is **blocked until the account is upgraded**; until then the app uses Keepa's reported FBA fee and the approximate table.
+3. **Individual per-item fee isn't in the profit maths.** Until Professional, each sale also costs 75p. Add `Profit:PerItemSellingFee` (Phase 0).
+4. **VAT status.** The calculator defaults to *VAT registered*. If the owner is not VAT registered (turnover below the threshold) the figures differ materially. Set `Profit:VatRegistered` correctly (Phase 0). Open question below.
+5. **"Nothing off limits" vs account plan.** Several categories need Professional plus approval; gated/hazmat/IP-complaint-prone items are flagged (and hidden by default if asked) but never auto-assumed sellable.
+6. **Brand-protected items need valid invoices** for ungating and IP disputes. Retail receipts may not satisfy a brand owner. Flagged brands should be avoided until the owner understands the invoice requirements.
+
+## 2. The pipeline (Amazon-first)
 
 ```
- A DISCOVER        B QUALIFY         C TARGET          D SOURCE            E DECIDE & ALERT     F ACT / LEARN
- Keepa Product  -> SP-API: gating, -> Max buy price -> match offers/feeds -> rank (profit x risk) -> owner buys
- Finder saved      real fees,         per candidate     to candidates       alert when a deal     track purchase,
- searches          catalogue (EAN)    (target ROI)      by EAN               passes rules          compare actual v. predicted
+ A DISCOVER        B TARGET            C SOURCE (retail/online)     D DECIDE (capital-aware)     E ACT / LEARN
+ Keepa Product  -> max buy price   -> affiliate feeds, CSV,       -> rank by profit AND by       -> owner buys; record
+ Finder saved      per candidate,      quick "check a product"       profit per £ tied up per       purchase; compare actual
+ searches          stability score     (EAN/ASIN + price)            day; budget mode               vs predicted
+                          \-> F QUALIFY via SP-API (real fees, gating) once the account is Professional
 ```
-
-Why Amazon-first: Amazon/Keepa tell us *what is worth selling* (demand, price stability, Amazon not competing). The profit calculator then turns each candidate into a **target price** ("buy this at £X or less"), so sourcing becomes a lookup against a short list, not a scan of the whole internet.
 
 ## 3. What we reuse (already merged, tested)
 
 | Piece | Where | Use in v2 |
 |---|---|---|
-| Profit maths incl. VAT, fees seam, max buy price | `Application/Profit` | Core of stage C; fee estimator swapped for SP-API (phase 1) |
-| Risk bands, scoring, ranking | `Application/Risk`, `Ranking` | Stage E ranking, unchanged |
-| Token-safe Keepa client + `KeepaTokenState`, fake client | `Infrastructure/Keepa` | Extended with Product Finder (phase 2) |
-| CSV import, GTIN normalisation, EAN/brand+MPN matching | `Application/Import`, `Infrastructure/Import` | Stage D "supplier list" source |
-| Enrichment, opportunities, refresh pipeline, seed, CLI | `Infrastructure/Enrichment`, `Opportunities`, `Refresh` | Becomes the scheduled job's building blocks |
-| Buy List page, Unresolved page, dark theme | `Pages/*`, `Listing` | Stage E UI; add a "Targets" page (phase 2) |
+| Profit maths incl. VAT, fee seam, max buy price | `Application/Profit` | Core of stage B |
+| Risk bands, scoring, ranking | `Application/Risk`, `Ranking` | Stage D, extended with capital efficiency |
+| Token-safe Keepa client + `KeepaTokenState`, fake client | `Infrastructure/Keepa` | Extended with Product Finder (phase 1) |
+| CSV import, GTIN normalisation, EAN/brand+MPN matching | `Application/Import`, `Infrastructure/Import` | One source type among several |
+| Enrichment, opportunities, refresh pipeline, seed, CLI | `Infrastructure/*` | Building blocks of the scheduled job |
+| Buy List page, Unresolved page, dark theme | `Pages/*`, `Listing` | Stage D UI; add Targets page |
 
-Nothing is thrown away up front. Items become obsolete only when a replacement is proven (e.g. `ApproximateFeeEstimator` stays as the fallback when SP-API is unavailable).
+Nothing is thrown away up front; items become obsolete only when a replacement is proven.
 
 ## 4. Phases
 
-Each phase is small, ships on its own branch `claude/v2-N-<slug>`, keeps `dotnet test` green, and ends with a hand-checked worked example in its tests. **Live checks run on the EC2 box** (the build sandbox cannot reach Keepa or Amazon): every external integration ships with a `check-*` CLI command that spends almost nothing.
+Each phase is small, ships on a branch `claude/v2-N-<slug>`, keeps `dotnet test` green, and has hand-checked worked examples in its tests. **Live checks run on the EC2 box** (the build sandbox cannot reach Keepa or Amazon): every integration ships a `check-*` CLI command that spends almost nothing.
 
-### Phase 0 – Re-baseline (small)
-- Archive v1 plan (done in this PR) and adopt this one.
-- On EC2: `check-keepa` (free) to record the **real token balance and refill rate**; set `Keepa:MaxTokensPerRun` etc. from it. Run `check-keepa` on 1–3 known ASINs and compare against Keepa's charts (this was Phase 7 of v1; still unverified).
-- **Ownership seam** (decision D3, section 5): add an `OwnerId` column to user-owned tables with a constant single owner and an `IUserContext`. Cheap now, expensive later.
-- Fix anything the live check shows (which Keepa fields are actually populated; real per-product token cost).
-- *Done when:* live Keepa values for 3 ASINs match Keepa's own site, and the token budget is recorded in this file.
+### Phase 0 – Re-baseline (small, do first)
+- Adopt this plan (this PR). On EC2: run `check-keepa` (free) and record the **token balance and refill rate**; this confirms the Keepa plan is an *API* plan (a Keepa website/extension subscription is separate from API access) and sets `Keepa:MaxTokensPerRun` and the scheduler budget. Then `check-keepa` on 1-3 known ASINs and compare with Keepa's charts (still unverified from v1).
+- Add `Profit:PerItemSellingFee` (default 0.75 while Individual, 0 on Professional); set `Profit:VatRegistered` to the owner's real status; show both on the Settings area so numbers are explainable.
+- **Ownership seam** (D3): `OwnerId` on user-owned tables + `IUserContext` (single constant owner now).
+- *Done when:* live Keepa values for 3 ASINs match Keepa's site, the token budget is written here, and profit settings reflect the real account.
 
-### Phase 1 – Amazon truth via SP-API (read-only)
-Replaces guesses with Amazon's own data. All calls are read-only; **no listing or shipment writes**.
-- LWA authentication (refresh-token flow) and a typed `SpApiClient` for the EU endpoint, UK marketplace; per-operation rate limiter with backoff; credentials from `SpApi__ClientId`, `SpApi__ClientSecret`, `SpApi__RefreshToken` (never in source, never logged).
-- **Catalogue by EAN** (up to 20 identifiers per call): resolves EAN -> ASIN and attributes (brand, dimensions) **without spending Keepa tokens**. Keepa code lookups become the fallback. Several ASINs for one EAN still goes to the existing Unresolved screen.
-- **Product Fees estimate**: real referral + FBA fee for an ASIN at a given price; cached by ASIN and price band; implements `IFeeEstimator` (existing seam). Falls back to the approximate table on failure.
-- **Listing restrictions**: per ASIN for this seller account -> sets the `Gated` flag automatically and stores the approval link when approval is available; implements `IEligibilityChecker`.
-- CLI `check-spapi [ASIN...]`. Fixture-based tests for parsing, rate limiting, error handling, key redaction.
-- *Done when:* on EC2 the fee for a known ASIN matches Seller Central's revenue calculator, and a known gated ASIN is flagged.
+### Phase 1 – Discovery: saved searches and Targets
+- Keepa **Product Finder** in the existing client (same token governor, hard per-run cap; ASIN lists are then fetched in budgeted batches).
+- `SavedSearch` (criteria, token budget, schedule) and `Candidate` (ASIN, latest snapshot, stability metrics, **max buy price**, status New/Watching/Dismissed).
+- Criteria: sales rank / monthly sold range, 90-day average Buy Box price band, Amazon out of stock share, offer-count range, category include/exclude, price-stability limit. **Small-capital defaults:** low unit cost band, fast sell-through, low competition.
+- **Stability metrics** from Keepa stats: current vs 30/90-day average, 90-day min/max spread, Amazon-in-stock share, offer-count trend. A price currently far above its 90-day average is a spike and is penalised, because the 90-day average is the sell price.
+- **Targets page:** ranked "buy at or below £X", with demand, competition, flags; CSV export.
+- *Done when:* a saved search on EC2 yields a Targets list within its token budget and the owner agrees with the top ten.
 
-### Phase 2 – Discovery: saved searches and Targets
-- Keepa **Product Finder** support in the Keepa client (same token governor; a hard per-run cap; results are ASIN lists that are then fetched in budgeted batches).
-- `SavedSearch` (criteria + token budget + schedule) and `Candidate` (ASIN, latest snapshot, stability metrics, computed **max buy price**, status New/Watching/Dismissed).
-- Criteria the owner can set: sales rank / monthly sold range, 90-day average Buy Box price band, Amazon out of stock for at least X% of 90 days, offer-count range, category include/exclude, price-stability limit.
-- **Stability metrics** from Keepa stats: current vs 30/90-day average, 90-day min/max spread, Amazon-in-stock share, offer-count trend. A candidate whose price is spiking (current far above 90-day average) is penalised: the 90-day average is the sell price, so a spike is a trap.
-- **Targets page**: ranked "buy at or below £X" list per candidate with demand, competition and gating status; CSV export to send to suppliers for quotes.
-- *Done when:* a saved search on EC2 produces a Targets list within its token budget, and the owner agrees with the top ten.
+### Phase 2 – Capital-aware decisions and quick check
+- **Budget mode** (carry-over from v1): given £X, pick the best set of buys by risk-adjusted monthly profit per £, with quantities and a total.
+- **Capital efficiency metrics:** profit per £ tied up, expected days to sell, payback time, and ROI per day so a 20% ROI item that sells in 5 days can outrank a 60% ROI item that takes 60.
+- **"Check a product"**: enter an EAN or ASIN and the price seen (in a shop or online) -> instant verdict (net profit, ROI, max buy, risk, gating flag, stability). The fastest useful retail-arbitrage tool and needs no sourcing integration.
+- **Blocklist page** (brand/ASIN) (carry-over from v1).
+- *Done when:* the owner can paste a product and price and get a trustworthy verdict, and budget mode never exceeds the budget.
 
-### Phase 3 – Sourcing: match supplier data to Targets
-- Existing importer feeds stage D: an offer whose EAN matches a candidate becomes an `Opportunity` only if its price is at or below the candidate's max buy price (otherwise it is stored but not surfaced).
-- **Scheduled ingestion** of supplier lists: a watched folder first (`Sources:Inbox`), with a per-source freshness indicator; later email attachments or a URL pull.
-- Carry-overs from v1: **blocklist page** (brand/ASIN) and **budget mode** (best set of buys for a given £ budget, ranked by risk-adjusted monthly profit per pound).
-- *Done when:* dropping a supplier CSV into the inbox produces opportunities without opening the site.
+### Phase 3 – Sourcing for retail/online arbitrage
+- `ISourceFeed` adapter interface; the existing CSV import stays as the manual path (also for paid sourcing-tool exports, subject to their terms).
+- **Affiliate product feeds** (e.g. Awin) for UK merchants the owner has joined: EAN, price (VAT-inclusive), stock; incremental by feed update time; per-source freshness shown. Check each programme's terms before use.
+- Offers match to Candidates by EAN; an offer becomes an `Opportunity` only at or below the candidate's max buy price.
+- **No scraping of retailer sites** unless the owner decides otherwise after legal advice (unsettled UK position, high maintenance, anti-bot measures).
 
-### Phase 4 – Scheduler and alerts
-- One hosted background job (single-flight, existing `IRefreshPipeline` pattern) runs: saved searches -> qualify -> match -> recalculate, each stage inside its own budget.
-- **Alert rules** (min monthly profit, min ROI, max risk, not gated, price stable) -> email and/or Telegram/Discord webhook; de-duplicated; optional daily digest.
-- "Refresh now" button remains.
-- *Done when:* a new qualifying deal reaches the owner's phone without opening the site, and the same deal does not alert twice.
+### Phase 4 – Scheduler (website only)
+- One hosted background job (single-flight, existing `IRefreshPipeline` pattern) runs: saved searches -> qualify -> match -> recalculate, each stage inside its own budget. "Refresh now" remains. The site shows what changed since the last visit ("new since yesterday").
+- **No alerts yet** (see Phase 7).
 
-### Phase 5 – Feeds (optional, owner decides)
-- `ISourceFeed` adapter interface and an **affiliate product feed** adapter (e.g. Awin) for UK merchants the owner has joined: EAN, price (VAT-inclusive), stock; incremental by feed update time.
-- Check each programme's terms for price/stock use before enabling. **No scraping of retailer sites** unless the owner decides otherwise after legal advice.
+### Phase 5 – Amazon truth via SP-API (starts only after the account is Professional)
+Read-only; no listing or shipment writes.
+- LWA authentication and a typed client for the EU endpoint / UK marketplace; per-operation rate limiter with backoff; credentials `SpApi__ClientId`, `SpApi__ClientSecret`, `SpApi__RefreshToken` (never in source or logs).
+- **Catalogue by EAN** (up to 20 per call) to resolve EAN -> ASIN without spending Keepa tokens (Keepa lookups become the fallback).
+- **Product Fees estimate** -> `IFeeEstimator`; **Listing restrictions** -> `IEligibilityChecker` (sets `Gated`, stores the approval link).
+- CLI `check-spapi [ASIN...]`; fixture-based tests.
+- *Done when:* a known ASIN's fee matches Seller Central's calculator and a known gated ASIN is flagged.
 
 ### Phase 6 – Purchases and learning
-- Bought -> record quantity and actual cost; later pull actual sale prices and fees (SP-API orders/finances) to compare predicted vs actual profit and tune the model.
-- Inventory/ROI view.
+- Bought -> record quantity and actual cost; later pull actual sales and fees (SP-API orders/finances) to compare predicted vs actual profit and tune the model.
 
-### Phase 7 – Inbound and listing automation (optional, high risk)
-- SP-API write operations (listings, inbound shipments) only behind explicit per-action confirmation. Not started without a separate decision.
+### Phase 7 – Discord bot alerts (LATER – do not implement yet)
+Reserved. When the owner asks: a Discord bot posts new deals passing configurable rules (min profit/ROI, max risk, not gated, stable price), de-duplicated, with a daily digest. Design constraint now: keep "deal passed the rules" as a stored event so alerts can be added without changing the pipeline.
 
-### Phase 8 – Multi-user gate (decision point, not a build)
-Before any second user: resolve every item in section 5 "Gate G". Only then plan the build.
+### Phase 8 – Inbound and listing automation (optional, high risk)
+SP-API write operations only behind explicit per-action confirmation; separate decision.
+
+### Phase 9 – Multi-user gate (decision point, not a build)
+Resolve every item in section 5 "Gate G" before any second user.
 
 ## 5. Designing for "me now, others later"
 
-Principles that cost little now:
-- **Shared market data, private decisions.** `Product`, `AmazonSnapshot`, `AsinCandidate` (Keepa/Amazon facts) are global and shared (one fetch serves everyone, which is the token economics that make multi-user viable). User-owned: offers, opportunities, saved searches, candidates' status, blocklist, settings (VAT, target ROI, budget, inbound cost), alert rules. These get `OwnerId` (D3).
-- **Credentials behind an interface.** `ICredentialProvider` returns Keepa and SP-API credentials for the current owner. Today it reads environment variables; later it reads encrypted per-user secrets. No code outside it reads credentials.
-- **Settings per owner**, not only `appsettings.json` (today's `Profit`, `Ranking` options become defaults).
-- No global mutable state keyed implicitly to "the" user (the single-flight refresh lock becomes per-owner later).
+- **Shared market data, private decisions.** `Product`, `AmazonSnapshot`, `AsinCandidate` (Keepa/Amazon facts) are shared (one fetch can serve many users, which is what makes multi-user economics work). User-owned: offers, opportunities, saved searches, candidate status, blocklist, settings (VAT, plan fees, target ROI, budget), later alert rules. These get `OwnerId` (D3).
+- **Credentials behind an interface** (`ICredentialProvider`): environment variables today, encrypted per-user secrets later; no other code reads credentials.
+- **Settings per owner**, not only `appsettings.json` (today's options become defaults).
+- No implicit global state keyed to "the" user (the single-flight refresh lock becomes per-owner later).
 
-**Gate G (must be answered before a second user, because they may change the whole approach):**
-1. **Keepa terms:** may Keepa data be shown to or shared between other sellers? Does each user need their own API plan? (Not researched: Keepa's docs were unreachable from the research tool.)
-2. **Amazon terms:** serving other sellers makes this a third-party developer app. SP-API developer fees were announced for such apps in 2025 and reported cancelled/delayed in 2026; status unconfirmed. A public app also needs Amazon's app review.
-3. **Security and data:** per-user secret storage, tenant isolation tests, backups, GDPR/UK-GDPR.
-4. **Money:** billing/pricing that covers each user's Keepa token use.
-5. **Support and liability:** a tool that influences purchasing decisions needs clear disclaimers.
+**Gate G (answer before a second user; they may change the whole approach):**
+1. **Keepa terms:** may Keepa data be shown to or shared between other sellers? Does each user need their own API plan? (Not researched: Keepa's docs were unreachable.)
+2. **Amazon terms:** serving other sellers makes this a third-party developer app (public SP-API app, Amazon review). Developer fees were announced in 2025 and reported cancelled or delayed in 2026; status unconfirmed.
+3. **Security and data:** per-user secret storage, tenant isolation tests, backups, UK GDPR.
+4. **Money:** pricing that covers each user's Keepa token use.
+5. **Liability:** a tool that influences purchasing needs clear disclaimers.
+6. **Each user's account type** (Individual vs Professional) changes what the numbers mean (Buy Box eligibility), so the app must model it per user.
 
-## 6. Hard rules (carried over, unchanged)
+## 6. Hard rules (carried over)
 
-No secrets in the repo or logs; no scraping of Amazon (Keepa and SP-API only); never guess missing data (shown as "no data"); match on EAN/GTIN then brand+MPN, never title alone; Keepa tokens are a hard budget (never raise caps without asking, live checks via `check-*` commands); `seed` stays offline; money is `decimal`, times UTC, UI in GBP and dark-only; every behaviour has hand-checked tests. See `CLAUDE.md`.
+No secrets in the repo or logs; no scraping of Amazon (Keepa and SP-API only); never guess missing data (shown as "no data"); match on EAN/GTIN then brand+MPN, never title alone; Keepa tokens are a hard budget (never raise caps without asking; live checks via `check-*` commands); `seed` stays offline; money is `decimal`, times UTC, UI in GBP and dark-only; every behaviour has hand-checked tests. See `CLAUDE.md`.
 
-## 7. Assumptions to verify (from research, secondary sources)
+## 7. Assumptions to verify (secondary sources)
 
-These came from search summaries and vendor pages, not from Amazon/Keepa documentation:
-- Keepa Product Finder returns ASIN lists and pages results; its token cost per page (a source says 10) and the exact filter field names are **unverified**. Deals browsing is reported at 5 tokens per 150 deals.
-- Keepa plan sizes (a guide lists 20 tokens/min for €49) and token expiry (60 minutes) are **unverified**; Phase 0 measures the real plan.
-- SP-API rate limits are inconsistent across sources (Fees: 1 request/s burst 2; Catalog: 2 or 5 requests/s). Use conservative limits and read `x-amzn-RateLimit-Limit` headers.
-- SP-API usage fees: for the owner's own private app Amazon said no fees; confirm on Amazon's developer announcements before launch.
-- UK fee changes (December 2025 reductions, Low-Price FBA threshold, peak-season fee of about £0.12/unit from 15 Oct 2026 to 14 Jan 2027) each rest on a single source. Phase 1's real fee estimates remove the dependency on these.
-- Whether SP-API registration requires the Professional selling plan: believed yes, not verified.
+- Keepa Product Finder returns ASIN lists and pages results; its token cost per page (one source says 10) and exact filter field names are **unverified**. Deals browsing reportedly costs 5 tokens per 150 deals.
+- Keepa API plans are separate from website subscriptions; a guide lists 20 tokens/min for €49 and a 60-minute token expiry. Phase 0 measures the real plan.
+- SP-API rate limits are inconsistent across sources (Fees: 1 req/s burst 2; Catalog: 2 or 5 req/s). Use conservative limits and read the rate-limit response headers.
+- SP-API developer fees: Amazon said private apps on a seller's own account are exempt; confirm on Amazon's developer announcements.
+- UK fee changes (Dec 2025 reductions, Low-Price FBA threshold, peak-season fee of about £0.12/unit from 15 Oct 2026 to 14 Jan 2027) each rest on a single source; SP-API fee estimates (Phase 5) remove the dependency.
+- Individual plan: 75p per item, no Buy Box, no ads (Amazon pricing page confirmed 75p / £25; Buy Box and ads limits come from a comparison site and seller guides, so confirm in Seller Central).
 
 ## 8. Decisions log (v2)
 
 | # | Decision | Why |
 |---|---|---|
-| D1 | Reuse the existing code, new plan | Owner choice; most of stages B, C, E already work |
-| D2 | Amazon-first discovery | Owner choice; produces a short target-price list to source against |
-| D3 | Add `OwnerId` + `IUserContext` to user-owned tables now | "Me now, others later"; far cheaper before there is real data |
+| D1 | Reuse the existing code, new plan | Owner choice |
+| D2 | Amazon-first discovery | Owner choice; gives a short target-price list |
+| D3 | `OwnerId` + `IUserContext` on user-owned tables now | "Me now, others later"; cheap before real data exists |
 | D4 | Shared market data, private decisions | One Keepa fetch can serve many users |
-| D5 | SP-API read-only first; EAN->ASIN via Amazon catalogue, Keepa as fallback | Saves Keepa tokens; real fees and gating replace guesses |
-| D6 | No automatic purchasing; alerts + links instead | Retailer anti-bot, terms, stock errors, capital risk |
+| D5 | SP-API read-only, only after Professional upgrade; Keepa fee + approximate table meanwhile | SP-API is unavailable to Individual accounts |
+| D6 | No automatic purchasing | Retailer anti-bot, terms, stock errors, capital risk |
 | D7 | No retailer scraping by default | Unsettled UK legal position; high maintenance |
-| D8 | Phases 5-8 are optional and need owner approval | Highest legal/operational risk or dependent on unresolved questions |
+| D8 | Not wholesale: retail/online sourcing, affiliate feeds, quick-check tool, small-budget defaults | Owner has no capital for wholesale yet |
+| D9 | Capital efficiency (profit per £ per day) is a first-class ranking measure | Small capital must recycle fast |
+| D10 | Alerts deferred; Discord bot later, website only now | Owner choice |
+| D11 | Include the Individual-plan 75p per-item fee and the real VAT status in profit maths | Otherwise profit is overstated |
+| D12 | Phases 6-9 optional, need owner approval | Dependent on unresolved questions or high risk |
 
 ## 9. Open questions for the owner
 
-- Which categories do you want to sell, and which are off limits?
-- Wholesale suppliers, retail, or both? (Decides whether Phase 3 ingestion or Phase 5 feeds matters more.)
-- Preferred alert channel: email, Telegram or Discord?
-- Which Keepa plan are you on (Phase 0 will tell us; a quick `check-keepa` answers it)?
-- Is the seller account on the Professional plan, and is it already registered as a developer?
+- **Will you move to the Professional plan?** (Buy Box eligibility, SP-API, restricted categories; £25 + VAT a month.) This decides whether Phase 5 can happen at all.
+- **Are you VAT registered?** (Changes every profit figure.)
+- What is your starting budget for stock (default for budget mode), and the minimum profit and ROI that make a deal worth your time?
+- Which UK retailers do you buy from, or want to? (Decides which affiliate programmes matter in Phase 3.)
+- Confirm after Phase 0's `check-keepa`: your Keepa plan, refill rate and token balance.
