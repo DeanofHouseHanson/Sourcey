@@ -1,8 +1,9 @@
 # CLAUDE.md – Buy List
 
 Self-hosted ASP.NET Core 8 (Razor Pages, EF Core, SQLite) app for Amazon UK arbitrage sourcing. One user. Read
-`docs/PLAN.md` before starting any task: it holds the phase plan, contracts for unbuilt phases, design decisions and
-current status. **Update the status table in `docs/PLAN.md` when you finish a phase or make a decision.**
+`docs/PLAN.md` (plan v2) before starting any task: it holds the phases, design decisions and open questions.
+**Update `docs/PLAN.md` (phase status, decisions log) when you finish a phase or make a decision.** The original plan is archived in
+`docs/archive/PLAN-v1.md`; its "Done: Phases 1-5 (reference)" sections still describe how the existing code works.
 
 ## Commands
 
@@ -13,7 +14,7 @@ dotnet run --project src/BuyList.Web           # http://localhost:5235 (Developm
 export PATH="$PATH:$HOME/.dotnet/tools"        # for dotnet-ef (dotnet tool install --global dotnet-ef --version 8.*)
 dotnet ef migrations add <Name> -p src/BuyList.Infrastructure -s src/BuyList.Web -o Persistence/Migrations
 dotnet run --project src/BuyList.Web -- hash-password
-dotnet run --project src/BuyList.Web -- seed | refresh | check-keepa [ASIN...]   # see docs/PLAN.md "Phase 4"
+dotnet run --project src/BuyList.Web -- seed | refresh | check-keepa [ASIN...]   # see docs/archive/PLAN-v1.md "Phase 4"
 ```
 
 ## Layout and dependency rule
@@ -40,7 +41,7 @@ Business logic goes in Application as plain classes with constructor-injected `I
 - DateTimes come back from SQLite as `Utc` kind through a converter; keep it that way.
 - Schema changes need an EF migration; the app applies migrations on startup.
 - Every new behaviour needs xUnit tests with worked, hand-checked numbers (show the arithmetic in a comment, as in `ProfitCalculatorTests`).
-- Work one phase at a time, on a branch `claude/phase-N-<slug>`, tests green, commit with a clear message, then update `docs/PLAN.md`. Ask the owner before major decisions not covered by the plan.
+- Work one phase at a time, on a branch `claude/v2-N-<slug>`, tests green, commit with a clear message, then update `docs/PLAN.md`. Ask the owner before major decisions not covered by the plan.
 - Web tests: set config with `builder.UseSetting(...)`, not `ConfigureAppConfiguration` (Program.cs reads config before the host is built).
 - **UI is dark-only** (`data-bs-theme="dark"`; palette in `wwwroot/css/site.css`). Don't add light-only Bootstrap classes (`bg-white`, `table-light`, `navbar-light`, `text-dark`). Sort/filter/URL logic stays in `Application/Listing` + `Infrastructure/Listing`; pages stay thin.
 - Don't name a namespace `BuyList.*.BuyList` (it shadows the root `BuyList.` namespace); the Buy List code lives in `Listing`.
